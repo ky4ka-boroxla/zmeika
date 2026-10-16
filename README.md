@@ -12,7 +12,7 @@
 ## Ссылка
 
 Игра доступна по ссылке:  
-👉 **[https://dimacmirnov41-netizen.github.io/zmeika/](https://ky4ka-boroxla.github.io/zmeika/)**
+👉 **[https://ky4ka-boroxla.github.io/zmeika/](https://ky4ka-boroxla.github.io/zmeika/)**
 
 ---
 
