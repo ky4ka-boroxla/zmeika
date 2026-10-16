@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Змейка — мобильная</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body>
+    <div class="menu" id="menu">
+        <h1>🐍 Змейка</h1>
+        <div class="difficulty">
+            <button data-speed="200" class="active">Лёгкий</button>
+            <button data-speed="130">Средний</button>
+            <button data-speed="80">Сложный</button>
+            <button data-speed="40">Хардкор</button>
+        </div>
+        <button class="start-btn" id="startBtn">▶ СТАРТ</button>
+        <div class="description">
+            🖐️ Управление — кнопки на экране
+        </div>
+    </div>
+    <div class="menu hidden" id="gameOverMenu">
+        <div class="game-over-title">ИГРА ОКОНЧЕНА</div>
+        <div class="game-over-score" id="finalScore">Очки: 0</div>
+        <div class="buttons-row">
+            <button class="retry-btn" id="retryBtn">🔄 Переиграть</button>
+        </div>
+    </div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div class="status" id="status"></div>
+    <div class="info">
+        <div class="score" id="score">Очки: 0</div>
+    </div>
+    <div class="touch-controls">
+        <div class="touch-row">
+            <button class="touch-btn" data-dir="up">▲</button>
+        </div>
+        <div class="touch-row">
+            <button class="touch-btn" data-dir="left">◀</button>
+            <button class="touch-btn" data-dir="down">▼</button>
+            <button class="touch-btn" data-dir="right">▶</button>
+        </div>
+    </div>
+    <div class="switch-link">
+        <a href="index.html">🖥️ Десктопная версия</a>
+    </div>
+    <script src="js/game.js"></script>
+    <script src="js/mobile.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Змейка</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/desktop.css">
+</head>
+<body>
+    <div class="menu" id="menu">
+        <h1>🐍 Змейка</h1>
+        <div class="difficulty">
+            <button data-speed="200" class="active">Лёгкий</button>
+            <button data-speed="130">Средний</button>
+            <button data-speed="80">Сложный</button>
+            <button data-speed="40">Хардкор</button>
+            <a href="index-mobile.html" class="mobile-switch-btn">📱 Мобилка</a>
+        </div>
+        <button class="start-btn" id="startBtn">▶ СТАРТ</button>
+        <div class="description">
+            Управление: <span>⬆ ⬇ ⬅ ➡</span> | Пробел — перезапуск
+        </div>
+    </div>
+    <div class="menu hidden" id="gameOverMenu">
+        <div class="game-over-title">ИГРА ОКОНЧЕНА</div>
+        <div class="game-over-score" id="finalScore">Очки: 0</div>
+        <div class="buttons-row">
+            <button class="retry-btn" id="retryBtn">🔄 Переиграть</button>
+        </div>
+    </div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div class="status" id="status"></div>
+    <div class="info">
+        <div class="score" id="score">Очки: 0</div>
+    </div>
+    <script src="js/game.js"></script>
+    <script src="js/desktop.js"></script>
+</body>
+</html>
