@@ -15,6 +15,7 @@ const soundBtn = document.getElementById('soundBtn');
 const resumeBtn = document.getElementById('resumeBtn');
 const restartBtn = document.getElementById('restartBtn');
 const toMenuBtn = document.getElementById('toMenuBtn');
+const pauseScoreEl = document.getElementById('pauseScore');
 
 const CONFIG = {
     gridSize: 20,
@@ -239,6 +240,7 @@ function startGame() {
         clearInterval(gameLoop);
         gameLoop = null;
     }
+    menu.classList.remove('entering');
     snake = [{ x: 10, y: 10 }];
     direction = { x: 1, y: 0 };
     nextDirection = { x: 1, y: 0 };
@@ -251,9 +253,12 @@ function startGame() {
     menu.classList.add('hidden');
     gameOverMenu.classList.add('hidden');
     pauseMenu.classList.add('hidden');
+    pauseMenu.classList.remove('entering');
+    pauseMenu.classList.remove('leaving');
     pauseBtn.classList.remove('hidden');
     pauseBtn.textContent = '⏸';
     document.body.classList.remove('paused');
+    document.body.classList.remove('leaving-to-main');
     canvas.classList.remove('blurred');
     loadBest();
     generateFood();
@@ -267,6 +272,7 @@ function enterPause() {
         clearInterval(gameLoop);
         gameLoop = null;
     }
+    if (pauseScoreEl) pauseScoreEl.textContent = score;
     pauseBtn.textContent = '▶';
     document.body.classList.add('paused');
     canvas.classList.add('blurred');
@@ -276,25 +282,15 @@ function enterPause() {
     setTimeout(() => pauseMenu.classList.remove('entering'), 600);
 }
 
-function leavePause(animate) {
-    if (animate) {
-        pauseMenu.classList.add('leaving');
-        canvas.classList.remove('blurred');
-        document.body.classList.remove('paused');
-        setTimeout(() => {
-            pauseMenu.classList.add('hidden');
-            pauseMenu.classList.remove('leaving');
-        }, 400);
-    } else {
-        pauseMenu.classList.add('hidden');
-        canvas.classList.remove('blurred');
-        document.body.classList.remove('paused');
-    }
-}
-
 function resumeGame() {
     if (gameState !== 'paused') return;
-    leavePause(true);
+    pauseMenu.classList.add('leaving');
+    canvas.classList.remove('blurred');
+    document.body.classList.remove('paused');
+    setTimeout(() => {
+        pauseMenu.classList.add('hidden');
+        pauseMenu.classList.remove('leaving');
+    }, 400);
     gameState = 'playing';
     pauseBtn.textContent = '⏸';
     restartLoop();
@@ -308,20 +304,55 @@ function togglePause() {
     }
 }
 
-function showMenu() {
+function showMenu(animated) {
     gameState = 'menu';
     if (gameLoop) {
         clearInterval(gameLoop);
         gameLoop = null;
     }
-    leavePause(false);
-    menu.classList.remove('hidden');
-    gameOverMenu.classList.add('hidden');
-    pauseBtn.classList.add('hidden');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    statusEl.textContent = '';
-    scoreDisplay.textContent = 'Очки: 0';
-    loadBest();
+
+    if (animated) {
+        document.body.classList.add('leaving-to-main');
+        pauseMenu.classList.remove('entering');
+        pauseMenu.classList.add('leaving');
+        canvas.classList.add('blurred');
+
+        setTimeout(() => {
+            pauseMenu.classList.add('hidden');
+            pauseMenu.classList.remove('leaving');
+            canvas.classList.remove('blurred');
+            document.body.classList.remove('paused');
+            document.body.classList.remove('leaving-to-main');
+
+            menu.classList.remove('hidden');
+            menu.classList.remove('entering');
+            void menu.offsetWidth;
+            menu.classList.add('entering');
+            setTimeout(() => menu.classList.remove('entering'), 750);
+
+            gameOverMenu.classList.add('hidden');
+            pauseBtn.classList.add('hidden');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            statusEl.textContent = '';
+            scoreDisplay.textContent = 'Очки: 0';
+            loadBest();
+        }, 450);
+    } else {
+        document.body.classList.remove('paused');
+        document.body.classList.remove('leaving-to-main');
+        pauseMenu.classList.add('hidden');
+        pauseMenu.classList.remove('leaving');
+        pauseMenu.classList.remove('entering');
+        canvas.classList.remove('blurred');
+        menu.classList.remove('hidden');
+        menu.classList.remove('entering');
+        gameOverMenu.classList.add('hidden');
+        pauseBtn.classList.add('hidden');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        statusEl.textContent = '';
+        scoreDisplay.textContent = 'Очки: 0';
+        loadBest();
+    }
 }
 
 document.querySelectorAll('.menu .difficulty button').forEach(btn => {
@@ -337,12 +368,16 @@ startBtn.addEventListener('click', startGame);
 retryBtn.addEventListener('click', startGame);
 if (resumeBtn) resumeBtn.addEventListener('click', resumeGame);
 if (restartBtn) restartBtn.addEventListener('click', () => {
-    leavePause(false);
+    pauseMenu.classList.add('hidden');
+    pauseMenu.classList.remove('leaving');
+    pauseMenu.classList.remove('entering');
+    canvas.classList.remove('blurred');
+    document.body.classList.remove('paused');
+    document.body.classList.remove('leaving-to-main');
     startGame();
 });
 if (toMenuBtn) toMenuBtn.addEventListener('click', () => {
-    leavePause(false);
-    showMenu();
+    showMenu(true);
 });
 if (pauseBtn) pauseBtn.addEventListener('click', togglePause);
 if (soundBtn) {
@@ -352,4 +387,4 @@ if (soundBtn) {
     });
 }
 
-showMenu();
+showMenu(false);

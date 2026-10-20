@@ -309,7 +309,6 @@ body.paused .status {
     background: #ff8c00;
 }
 
-/* Анимация прилёта меню паузы */
 .pause-menu.entering .pause-card {
     animation: pauseFlyIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
@@ -358,4 +357,68 @@ body.paused .status {
 @keyframes fadeOut {
     from { opacity: 1; }
     to   { opacity: 0; }
+}
+
+/* ===== Переход «пауза → главное меню» ===== */
+body.leaving-to-main canvas {
+    transform: scale(0.35) translateY(-10px);
+    filter: blur(12px) brightness(0.3);
+    opacity: 0;
+    transition: transform 0.45s cubic-bezier(0.4, 0, 1, 1),
+                filter 0.45s ease,
+                opacity 0.45s ease;
+}
+
+body.leaving-to-main .pause-menu .pause-card {
+    animation: pauseFlyOut 0.45s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+body.leaving-to-main .pause-menu {
+    animation: fadeOut 0.45s ease forwards;
+}
+
+.menu.entering {
+    animation: mainMenuFlyIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.menu.entering h1 {
+    animation: menuElemIn 0.5s 0.1s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.menu.entering .difficulty {
+    animation: menuElemIn 0.5s 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.menu.entering .best-score {
+    animation: menuElemIn 0.5s 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.menu.entering .start-btn {
+    animation: menuElemIn 0.5s 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.menu.entering .description {
+    animation: menuElemIn 0.5s 0.44s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes mainMenuFlyIn {
+    0% {
+        opacity: 0;
+        transform: scale(2.8) translateY(60px);
+        filter: blur(14px);
+    }
+    50% {
+        opacity: 1;
+        filter: blur(0);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: blur(0);
+    }
+}
+
+@keyframes menuElemIn {
+    0% {
+        opacity: 0;
+        transform: translateY(24px) scale(0.85);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
