@@ -4,6 +4,7 @@ const statusEl = document.getElementById('status');
 const scoreDisplay = document.getElementById('score');
 const menu = document.getElementById('menu');
 const gameOverMenu = document.getElementById('gameOverMenu');
+const pauseMenu = document.getElementById('pauseMenu');
 const gameOverTitle = document.getElementById('gameOverTitle');
 const startBtn = document.getElementById('startBtn');
 const retryBtn = document.getElementById('retryBtn');
@@ -11,6 +12,9 @@ const finalScore = document.getElementById('finalScore');
 const bestScoreEl = document.getElementById('bestScore');
 const pauseBtn = document.getElementById('pauseBtn');
 const soundBtn = document.getElementById('soundBtn');
+const resumeBtn = document.getElementById('resumeBtn');
+const restartBtn = document.getElementById('restartBtn');
+const toMenuBtn = document.getElementById('toMenuBtn');
 
 const CONFIG = {
     gridSize: 20,
@@ -39,8 +43,7 @@ let soundEnabled = true;
 const bestKey = (speed) => 'snake_best_' + speed;
 
 function loadBest() {
-    const key = bestKey(baseSpeed);
-    const val = parseInt(localStorage.getItem(key) || '0', 10);
+    const val = parseInt(localStorage.getItem(bestKey(baseSpeed)) || '0', 10);
     bestScoreEl.textContent = 'Рекорд: ' + val;
     return val;
 }
@@ -48,9 +51,7 @@ function loadBest() {
 function saveBest() {
     const key = bestKey(baseSpeed);
     const prev = parseInt(localStorage.getItem(key) || '0', 10);
-    if (score > prev) {
-        localStorage.setItem(key, String(score));
-    }
+    if (score > prev) localStorage.setItem(key, String(score));
 }
 
 function beep(freq, dur, type) {
@@ -86,9 +87,7 @@ function generateFood() {
     const freeCells = [];
     for (let i = 0; i < tileCount; i++) {
         for (let j = 0; j < tileCount; j++) {
-            if (!snakeSet.has(i + ',' + j)) {
-                freeCells.push({ x: i, y: j });
-            }
+            if (!snakeSet.has(i + ',' + j)) freeCells.push({ x: i, y: j });
         }
     }
     if (freeCells.length === 0) {
@@ -251,28 +250,61 @@ function startGame() {
     statusEl.textContent = '';
     menu.classList.add('hidden');
     gameOverMenu.classList.add('hidden');
+    pauseMenu.classList.add('hidden');
     pauseBtn.classList.remove('hidden');
     pauseBtn.textContent = '⏸';
+    document.body.classList.remove('paused');
+    canvas.classList.remove('blurred');
     loadBest();
     generateFood();
     restartLoop();
     draw();
 }
 
+function enterPause() {
+    gameState = 'paused';
+    if (gameLoop) {
+        clearInterval(gameLoop);
+        gameLoop = null;
+    }
+    pauseBtn.textContent = '▶';
+    document.body.classList.add('paused');
+    canvas.classList.add('blurred');
+    pauseMenu.classList.remove('hidden');
+    pauseMenu.classList.remove('leaving');
+    pauseMenu.classList.add('entering');
+    setTimeout(() => pauseMenu.classList.remove('entering'), 600);
+}
+
+function leavePause(animate) {
+    if (animate) {
+        pauseMenu.classList.add('leaving');
+        canvas.classList.remove('blurred');
+        document.body.classList.remove('paused');
+        setTimeout(() => {
+            pauseMenu.classList.add('hidden');
+            pauseMenu.classList.remove('leaving');
+        }, 400);
+    } else {
+        pauseMenu.classList.add('hidden');
+        canvas.classList.remove('blurred');
+        document.body.classList.remove('paused');
+    }
+}
+
+function resumeGame() {
+    if (gameState !== 'paused') return;
+    leavePause(true);
+    gameState = 'playing';
+    pauseBtn.textContent = '⏸';
+    restartLoop();
+}
+
 function togglePause() {
     if (gameState === 'playing') {
-        gameState = 'paused';
-        if (gameLoop) {
-            clearInterval(gameLoop);
-            gameLoop = null;
-        }
-        statusEl.textContent = 'ПАУЗА';
-        pauseBtn.textContent = '▶';
+        enterPause();
     } else if (gameState === 'paused') {
-        gameState = 'playing';
-        statusEl.textContent = '';
-        pauseBtn.textContent = '⏸';
-        restartLoop();
+        resumeGame();
     }
 }
 
@@ -282,6 +314,7 @@ function showMenu() {
         clearInterval(gameLoop);
         gameLoop = null;
     }
+    leavePause(false);
     menu.classList.remove('hidden');
     gameOverMenu.classList.add('hidden');
     pauseBtn.classList.add('hidden');
@@ -302,6 +335,15 @@ document.querySelectorAll('.menu .difficulty button').forEach(btn => {
 
 startBtn.addEventListener('click', startGame);
 retryBtn.addEventListener('click', startGame);
+if (resumeBtn) resumeBtn.addEventListener('click', resumeGame);
+if (restartBtn) restartBtn.addEventListener('click', () => {
+    leavePause(false);
+    startGame();
+});
+if (toMenuBtn) toMenuBtn.addEventListener('click', () => {
+    leavePause(false);
+    showMenu();
+});
 if (pauseBtn) pauseBtn.addEventListener('click', togglePause);
 if (soundBtn) {
     soundBtn.addEventListener('click', () => {
@@ -309,9 +351,5 @@ if (soundBtn) {
         soundBtn.textContent = soundEnabled ? '🔊' : '🔇';
     });
 }
-
-document.querySelectorAll('.menu .difficulty button').forEach(b => {
-    if (parseInt(b.dataset.speed, 10) === baseSpeed) b.classList.add('active');
-});
 
 showMenu();
