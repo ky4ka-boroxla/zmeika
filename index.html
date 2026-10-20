@@ -2,11 +2,15 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Змейка</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="desktop.css">
 </head>
 <body>
+    <button class="sound-btn" id="soundBtn" title="Звук">🔊</button>
+    <button class="pause-btn hidden" id="pauseBtn" title="Пауза">⏸</button>
+
     <div class="menu" id="menu">
         <h1>🐍 Змейка</h1>
         <div class="difficulty">
@@ -16,18 +20,21 @@
             <button data-speed="40">Хардкор</button>
             <a href="index-mobile.html" class="mobile-switch-btn">📱 Мобилка</a>
         </div>
+        <div class="best-score" id="bestScore">Рекорд: 0</div>
         <button class="start-btn" id="startBtn">▶ СТАРТ</button>
         <div class="description">
-            Управление: <span>⬆ ⬇ ⬅ ➡</span> | Пробел — перезапуск
+            Управление: <span>⬆ ⬇ ⬅ ➡</span> | Пробел — пауза / рестарт | Esc — пауза
         </div>
     </div>
+
     <div class="menu hidden" id="gameOverMenu">
-        <div class="game-over-title">ИГРА ОКОНЧЕНА</div>
+        <div class="game-over-title" id="gameOverTitle">ИГРА ОКОНЧЕНА</div>
         <div class="game-over-score" id="finalScore">Очки: 0</div>
         <div class="buttons-row">
             <button class="retry-btn" id="retryBtn">🔄 Переиграть</button>
         </div>
     </div>
+
     <canvas id="gameCanvas" width="400" height="400"></canvas>
     <div class="status" id="status"></div>
     <div class="info">

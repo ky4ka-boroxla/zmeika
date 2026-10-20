@@ -1,8 +1,7 @@
 * {
     user-select: none;
-}
-body {
-    touch-action: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 canvas {
     touch-action: none;
@@ -30,7 +29,7 @@ canvas {
     color: #ffa502;
     font-weight: bold;
     cursor: pointer;
-    touch-action: none;
+    touch-action: manipulation;
     transition: 0.1s;
     box-shadow: 0 0 15px rgba(255, 165, 2, 0.15);
 }

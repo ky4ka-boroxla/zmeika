@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="mobile.css">
 </head>
 <body>
+    <button class="sound-btn" id="soundBtn" title="Звук">🔊</button>
+    <button class="pause-btn hidden" id="pauseBtn" title="Пауза">⏸</button>
+
     <div class="menu" id="menu">
         <h1>🐍 Змейка</h1>
         <div class="difficulty">
@@ -16,23 +19,27 @@
             <button data-speed="80">Сложный</button>
             <button data-speed="40">Хардкор</button>
         </div>
+        <div class="best-score" id="bestScore">Рекорд: 0</div>
         <button class="start-btn" id="startBtn">▶ СТАРТ</button>
         <div class="description">
-            🖐️ Управление — кнопки на экране
+            🖐️ Свайпы по полю или кнопки на экране
         </div>
     </div>
+
     <div class="menu hidden" id="gameOverMenu">
-        <div class="game-over-title">ИГРА ОКОНЧЕНА</div>
+        <div class="game-over-title" id="gameOverTitle">ИГРА ОКОНЧЕНА</div>
         <div class="game-over-score" id="finalScore">Очки: 0</div>
         <div class="buttons-row">
             <button class="retry-btn" id="retryBtn">🔄 Переиграть</button>
         </div>
     </div>
+
     <canvas id="gameCanvas" width="400" height="400"></canvas>
     <div class="status" id="status"></div>
     <div class="info">
         <div class="score" id="score">Очки: 0</div>
     </div>
+
     <div class="touch-controls">
         <div class="touch-row">
             <button class="touch-btn" data-dir="up">▲</button>
@@ -43,9 +50,11 @@
             <button class="touch-btn" data-dir="right">▶</button>
         </div>
     </div>
+
     <div class="switch-link">
         <a href="index.html">🖥️ Десктопная версия</a>
     </div>
+
     <script src="game.js"></script>
     <script src="mobile.js"></script>
 </body>

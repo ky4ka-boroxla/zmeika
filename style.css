@@ -53,6 +53,7 @@ canvas {
     align-items: center;
     z-index: 100;
     padding: 20px;
+    overflow-y: auto;
 }
 .menu h1 {
     color: #ffa502;
@@ -126,7 +127,7 @@ canvas {
 }
 .game-over-score {
     color: #ffa502;
-    font-size: 28px;
+    font-size: 24px;
     margin-bottom: 25px;
     text-align: center;
 }
@@ -161,6 +162,51 @@ canvas {
 .menu .buttons-row .retry-btn:hover {
     background: #ff8c00;
     border-color: #ff8c00;
+}
+.best-score {
+    color: #a4b0be;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+.pause-btn {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #1c1f2f;
+    border: 2px solid #ffa502;
+    color: #ffa502;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 50;
+    transition: all 0.2s;
+}
+.pause-btn:hover {
+    background: #ffa502;
+    color: #12141c;
+    transform: scale(1.1);
+}
+.sound-btn {
+    position: fixed;
+    top: 15px;
+    right: 75px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #1c1f2f;
+    border: 2px solid #ffa502;
+    color: #ffa502;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 50;
+    transition: all 0.2s;
+}
+.sound-btn:hover {
+    background: #ffa502;
+    color: #12141c;
+    transform: scale(1.1);
 }
 .hidden {
     display: none !important;
