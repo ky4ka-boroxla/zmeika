@@ -68,19 +68,58 @@ body.paused .status {
 }
 
 .combo {
-    color: #ffd700;
-    font-size: 22px;
-    font-weight: bold;
-    min-height: 28px;
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-height: 56px;
     opacity: 0;
     transform: scale(0.6);
     transition: opacity 0.25s, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+    pointer-events: none;
+    user-select: none;
 }
 .combo.visible {
     opacity: 1;
     transform: scale(1);
+}
+.combo-label {
+    color: #ffd700;
+    font-size: 22px;
+    font-weight: bold;
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+}
+.combo-timer {
+    color: #ffa502;
+    font-size: 12px;
+    font-weight: bold;
+    opacity: 0.85;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.3px;
+    text-shadow: 0 0 6px rgba(255, 165, 2, 0.4);
+    line-height: 1;
+}
+.combo-bar {
+    width: 70px;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255, 215, 0, 0.15);
+    overflow: hidden;
+    margin-top: 3px;
+}
+.combo-bar span {
+    display: block;
+    height: 100%;
+    width: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #ffd700, #ffa502);
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.7);
+    transform: scaleX(var(--combo-progress, 1));
+    transform-origin: left center;
+    transition: transform 0.05s linear;
 }
 
 .menu {

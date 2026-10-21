@@ -39,7 +39,6 @@ const resetProgressBtn = document.getElementById('resetProgressBtn');
 const toastContainer = document.getElementById('toastContainer');
 
 const tileCount = canvas.width / CONFIG.gridSize;
-const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 let snake = [];
 let direction = { x: 1, y: 0 };
@@ -108,6 +107,7 @@ function loadSettings() {
     if (wrapToggle) wrapToggle.checked = wrapMode;
     if (soundBtn) soundBtn.textContent = soundEnabled ? '🔊' : '🔇';
     if (musicBtn) musicBtn.textContent = musicEnabled ? '🎵' : '🔕';
+    if (store.get('reducedMotion', false)) document.body.classList.add('force-reduced-motion');
     applySkin();
 }
 
@@ -197,7 +197,8 @@ function generateFood() {
 }
 
 function addParticles(x, y, color, count = 12) {
-    if (reduceMotion) return;
+    if (document.body.classList.contains('force-reduced-motion')) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const cx = x * CONFIG.gridSize + CONFIG.gridSize / 2;
     const cy = y * CONFIG.gridSize + CONFIG.gridSize / 2;
     for (let i = 0; i < count; i++) {
@@ -298,10 +299,21 @@ function interpolatedSnake() {
     });
 }
 
+function adjustColor(hex, percent) {
+    const n = parseInt(hex.slice(1), 16);
+    let r = (n >> 16) + percent;
+    let g = ((n >> 8) & 0xff) + percent;
+    let b = (n & 0xff) + percent;
+    r = Math.max(0, Math.min(255, r));
+    g = Math.max(0, Math.min(255, g));
+    b = Math.max(0, Math.min(255, b));
+    return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+}
+
 function draw() {
     const now = performance.now();
     ctx.save();
-    if (shake > 0 && !reduceMotion) {
+    if (shake > 0) {
         ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
         shake *= 0.85;
         if (shake < 0.5) shake = 0;
@@ -315,7 +327,8 @@ function draw() {
     const gs = CONFIG.gridSize;
 
     if (interp.length > 0) {
-        const [hx, hy] = [interp[0].x, interp[0].y];
+        const hx = interp[0].x;
+        const hy = interp[0].y;
         if (skinDef.glow) {
             ctx.shadowColor = skinDef.head;
             ctx.shadowBlur = 14;
@@ -348,8 +361,7 @@ function draw() {
             const f = i / interp.length;
             color = `hsl(${30 - f * 30}, 100%, ${50 - f * 20}%)`;
         } else if (!skinDef.square) {
-            const shade = i % 2 ? 0 : 10;
-            color = shade === 0 ? skinDef.body : adjustColor(skinDef.body, -12);
+            color = i % 2 ? skinDef.body : adjustColor(skinDef.body, -12);
         }
         drawSegment(s.x, s.y, color, 5, skinDef.square);
     }
@@ -359,18 +371,7 @@ function draw() {
     ctx.restore();
 }
 
-function adjustColor(hex, percent) {
-    const n = parseInt(hex.slice(1), 16);
-    let r = (n >> 16) + percent;
-    let g = ((n >> 8) & 0xff) + percent;
-    let b = (n & 0xff) + percent;
-    r = Math.max(0, Math.min(255, r));
-    g = Math.max(0, Math.min(255, g));
-    b = Math.max(0, Math.min(255, b));
-    return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
-}
-
-function update(dt) {
+function update() {
     direction = nextDirection;
     directionChanged = false;
     prevSnake = snake.map(s => ({ ...s }));
@@ -425,7 +426,6 @@ function update(dt) {
 function updateComboUI() {
     if (!comboDisplay) return;
     if (comboCount > 1) {
-        comboDisplay.textContent = '🔥 x' + comboCount;
         comboDisplay.classList.add('visible');
         comboTimer = performance.now();
         if (comboCount >= 5) unlockAch('combo_5');
@@ -434,11 +434,28 @@ function updateComboUI() {
     }
 }
 
+function renderCombo() {
+    if (!comboDisplay) return;
+    if (comboCount > 1) {
+        const elapsed = performance.now() - comboTimer;
+        const remain = Math.max(0, (CONFIG.comboWindow - elapsed) / 1000);
+        const label = comboDisplay.querySelector('.combo-label');
+        const timer = comboDisplay.querySelector('.combo-timer');
+        if (label) label.textContent = '🔥 x' + comboCount;
+        if (timer) timer.textContent = remain.toFixed(1) + 'с';
+        comboDisplay.style.setProperty('--combo-progress', (remain / (CONFIG.comboWindow / 1000)));
+        if (remain <= 0) {
+            comboCount = 0;
+            comboDisplay.classList.remove('visible');
+        }
+    }
+}
+
 function die() {
     gameState = 'gameover';
     statusEl.textContent = 'ИГРА ОКОНЧЕНА';
     beep(120, 0.3, 'sawtooth');
-    if (!reduceMotion) shake = 14;
+    shake = 14;
     finishGame('ИГРА ОКОНЧЕНА');
 }
 
@@ -501,10 +518,7 @@ function loopRAF(t) {
             snakeSnapshot = snake;
         }
     }
-    if (comboCount > 1 && performance.now() - comboTimer > CONFIG.comboWindow) {
-        comboCount = 0;
-        updateComboUI();
-    }
+    renderCombo();
     draw();
 }
 
@@ -755,7 +769,6 @@ reducedMotionToggle?.addEventListener('change', () => {
     if (reducedMotionToggle.checked) store.set('reducedMotion', true);
     else store.del('reducedMotion');
 });
-if (store.get('reducedMotion', false)) document.body.classList.add('force-reduced-motion');
 
 resetProgressBtn?.addEventListener('click', () => {
     if (!confirm('Сбросить рекорды, статистику и достижения?')) return;
