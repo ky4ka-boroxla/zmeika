@@ -28,11 +28,9 @@ canvas.addEventListener('pointerup', (e) => {
     const dx = e.clientX - swX;
     const dy = e.clientY - swY;
     if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) return;
-    if (Math.abs(dx) > Math.abs(dy)) {
-        setDirection(dx > 0 ? 1 : -1, 0);
-    } else {
-        setDirection(0, dy > 0 ? 1 : -1);
-    }
+    if (Math.abs(dx) > Math.abs(dy)) setDirection(dx > 0 ? 1 : -1, 0);
+    else setDirection(0, dy > 0 ? 1 : -1);
+    if (navigator.vibrate) navigator.vibrate(8);
 }, { passive: true });
 
 canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });

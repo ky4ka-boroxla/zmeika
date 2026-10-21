@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#12141c">
+    <link rel="manifest" href="manifest.json">
     <title>Змейка — мобильная</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="mobile.css">
 </head>
 <body>
     <button class="sound-btn" id="soundBtn" title="Звук">🔊</button>
+    <button class="music-btn" id="musicBtn" title="Музыка">🎵</button>
     <button class="pause-btn hidden" id="pauseBtn" title="Пауза">⏸</button>
 
     <div class="menu" id="menu">
@@ -21,9 +24,13 @@
         </div>
         <div class="best-score" id="bestScore">Рекорд: 0</div>
         <button class="start-btn" id="startBtn">▶ СТАРТ</button>
-        <div class="description">
-            🖐️ Свайпы по полю или кнопки на экране
+        <div class="menu-nav">
+            <button id="statsBtn">📊</button>
+            <button id="recordsBtn">🏆</button>
+            <button id="achBtn">🎖</button>
+            <button id="settingsBtn">⚙</button>
         </div>
+        <div class="description">🖐️ Свайпы по полю или кнопки на экране</div>
     </div>
 
     <div class="menu hidden" id="gameOverMenu">
@@ -44,16 +51,59 @@
         </div>
     </div>
 
+    <div class="menu hidden" id="settingsMenu">
+        <h1>⚙ Настройки</h1>
+        <div class="settings-block">
+            <label>Скин змейки</label>
+            <div class="skins">
+                <button class="skin-btn" data-skin="classic">Классика</button>
+                <button class="skin-btn" data-skin="neon">Neon</button>
+                <button class="skin-btn" data-skin="retro">Retro</button>
+                <button class="skin-btn" data-skin="fire">Fire</button>
+            </div>
+        </div>
+        <div class="settings-block">
+            <label>Музыка <input type="range" id="musicVol" min="0" max="100" value="35"></label>
+            <label>Звуки <input type="range" id="sfxVol" min="0" max="100" value="60"></label>
+        </div>
+        <div class="settings-block">
+            <label><input type="checkbox" id="wrapToggle"> Проходить сквозь стены</label>
+        </div>
+        <button class="danger-btn" id="resetProgressBtn">🗑 Сбросить прогресс</button>
+        <button class="back-btn" id="backFromSettings">← Назад</button>
+    </div>
+
+    <div class="menu hidden" id="statsMenu">
+        <h1>📊 Статистика</h1>
+        <div class="stats-grid">
+            <div><span id="statGames">0</span><label>партий</label></div>
+            <div><span id="statPoints">0</span><label>всего очков</label></div>
+            <div><span id="statLongest">0</span><label>длина</label></div>
+        </div>
+        <button class="back-btn" id="backFromStats">← Назад</button>
+    </div>
+
+    <div class="menu hidden" id="achMenu">
+        <h1>🎖 Достижения</h1>
+        <ul class="ach-list" id="achList"></ul>
+        <button class="back-btn" id="backFromAch">← Назад</button>
+    </div>
+
+    <div class="menu hidden" id="recordsMenu">
+        <h1>🏆 Рекорды</h1>
+        <ul class="records-list" id="recordsList"></ul>
+        <button class="back-btn" id="backFromRecords">← Назад</button>
+    </div>
+
     <canvas id="gameCanvas" width="400" height="400"></canvas>
     <div class="status" id="status"></div>
+    <div class="combo" id="comboDisplay">🔥 x1</div>
     <div class="info">
         <div class="score" id="score">Очки: 0</div>
     </div>
 
     <div class="touch-controls">
-        <div class="touch-row">
-            <button class="touch-btn" data-dir="up">▲</button>
-        </div>
+        <div class="touch-row"><button class="touch-btn" data-dir="up">▲</button></div>
         <div class="touch-row">
             <button class="touch-btn" data-dir="left">◀</button>
             <button class="touch-btn" data-dir="down">▼</button>
@@ -61,11 +111,15 @@
         </div>
     </div>
 
-    <div class="switch-link">
-        <a href="index.html">🖥️ Десктопная версия</a>
-    </div>
+    <div class="switch-link"><a href="index.html">🖥️ Десктоп</a></div>
 
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="config.js"></script>
     <script src="game.js"></script>
     <script src="mobile.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+    </script>
 </body>
 </html>

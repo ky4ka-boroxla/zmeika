@@ -3,9 +3,7 @@
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
 }
-canvas {
-    touch-action: none;
-}
+canvas { touch-action: none; }
 .touch-controls {
     margin-top: 20px;
     display: flex;
@@ -14,11 +12,7 @@ canvas {
     gap: 10px;
     touch-action: none;
 }
-.touch-row {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-}
+.touch-row { display: flex; gap: 20px; justify-content: center; }
 .touch-btn {
     width: 80px;
     height: 80px;
@@ -31,17 +25,10 @@ canvas {
     cursor: pointer;
     touch-action: manipulation;
     transition: 0.1s;
-    box-shadow: 0 0 15px rgba(255, 165, 2, 0.15);
+    box-shadow: 0 0 15px rgba(255,165,2,0.15);
 }
-.touch-btn:active {
-    background: #ffa502;
-    color: #12141c;
-    transform: scale(0.9);
-    box-shadow: 0 0 30px rgba(255, 165, 2, 0.4);
-}
-.switch-link {
-    margin-top: 20px;
-}
+.touch-btn:active { background: #ffa502; color: #12141c; transform: scale(0.9); box-shadow: 0 0 30px rgba(255,165,2,0.4); }
+.switch-link { margin-top: 20px; }
 .switch-link a {
     display: inline-block;
     padding: 12px 30px;
@@ -54,11 +41,4 @@ canvas {
     text-decoration: none;
     transition: all 0.3s;
 }
-.switch-link a:hover {
-    background: #ffa502;
-    color: #12141c;
-    transform: scale(1.05);
-}
-.switch-link a:active {
-    transform: scale(0.95);
-}
+.switch-link a:hover { background: #ffa502; color: #12141c; transform: scale(1.05); }
