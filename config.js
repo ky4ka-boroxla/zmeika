@@ -34,3 +34,7 @@ const ACHIEVEMENTS = [
     { id: 'insane_win',   title: 'Безумец',         desc: '100 очков на Хардкоре' },
     { id: 'no_pause',     title: 'Без остановок',   desc: 'Партия без паузы до 200 очков' }
 ];
+
+const MUSIC_TRACKS_FALLBACK = [
+    { title: 'Фоновая музыка', file: 'music/bgm.mp3' }
+];

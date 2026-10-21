@@ -11,7 +11,7 @@
 </head>
 <body>
     <button class="sound-btn" id="soundBtn" title="Звук">🔊</button>
-    <button class="music-btn" id="musicBtn" title="Музыка">🎵</button>
+    <button class="music-btn" id="musicBtn" title="Музыка">🔕</button>
     <button class="pause-btn hidden" id="pauseBtn" title="Пауза">⏸</button>
 
     <div class="menu" id="menu">
@@ -45,6 +45,27 @@
         <div class="pause-card">
             <h2>⏸ ПАУЗА</h2>
             <div class="pause-score">Текущий счёт: <b id="pauseScore">0</b></div>
+
+            <div class="pause-player">
+                <div class="player-row">
+                    <button class="player-btn" id="playerPrev" title="Предыдущий">⏮</button>
+                    <button class="player-btn primary" id="playerToggle" title="Играть/Пауза">▶</button>
+                    <button class="player-btn" id="playerNext" title="Следующий">⏭</button>
+                    <span class="player-title" id="playerTitle">—</span>
+                </div>
+                <div class="player-progress" id="playerProgress">
+                    <div class="player-progress-fill" id="playerFill"></div>
+                </div>
+                <ul class="player-list" id="playerList"></ul>
+                <div class="player-row">
+                    <input type="range" id="playerVol" min="0" max="100" value="35" class="player-vol">
+                    <label class="player-upload">
+                        📂 Загрузить
+                        <input type="file" id="playerFile" accept="audio/*,video/mp4,.mp3,.wav,.ogg,.m4a,.mp4,.flac,.opus,.aac" hidden>
+                    </label>
+                </div>
+            </div>
+
             <button class="primary" id="resumeBtn">▶ Продолжить</button>
             <button id="restartBtn">🔄 Заново</button>
             <button id="toMenuBtn">🏠 В меню</button>
@@ -69,6 +90,7 @@
         <div class="settings-block">
             <label><input type="checkbox" id="wrapToggle"> Проходить сквозь стены</label>
         </div>
+        <button class="back-btn" id="resetMusicWarnBtn" style="margin-top: 10px;">🔔 Сбросить предупреждение о музыке</button>
         <button class="danger-btn" id="resetProgressBtn">🗑 Сбросить прогресс</button>
         <button class="back-btn" id="backFromSettings">← Назад</button>
     </div>
@@ -97,7 +119,11 @@
 
     <canvas id="gameCanvas" width="400" height="400"></canvas>
     <div class="status" id="status"></div>
-    <div class="combo" id="comboDisplay">🔥 x1</div>
+    <div class="combo" id="comboDisplay">
+        <div class="combo-label">🔥 x1</div>
+        <div class="combo-timer">0.0с</div>
+        <div class="combo-bar"><span></span></div>
+    </div>
     <div class="info">
         <div class="score" id="score">Очки: 0</div>
     </div>

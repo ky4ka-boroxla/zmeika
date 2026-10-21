@@ -36,6 +36,7 @@ const sfxVolInput = document.getElementById('sfxVol');
 const wrapToggle = document.getElementById('wrapToggle');
 const reducedMotionToggle = document.getElementById('reducedMotionToggle');
 const resetProgressBtn = document.getElementById('resetProgressBtn');
+const resetMusicWarnBtn = document.getElementById('resetMusicWarnBtn');
 const toastContainer = document.getElementById('toastContainer');
 
 const tileCount = canvas.width / CONFIG.gridSize;
@@ -52,7 +53,7 @@ let baseSpeed = CONFIG.speeds.easy;
 let currentSpeed = baseSpeed;
 let gameState = 'menu';
 let soundEnabled = true;
-let musicEnabled = true;
+let musicEnabled = false;
 let pausedThisGame = false;
 let comboCount = 0;
 let comboTimer = 0;
@@ -95,7 +96,7 @@ function loadSettings() {
     skin = store.get('skin', 'classic');
     wrapMode = store.get('wrap', CONFIG.wrap);
     soundEnabled = store.get('sound', true);
-    musicEnabled = store.get('music', true);
+    musicEnabled = store.get('music', false);
     stats = store.get('stats', stats);
     unlockedAch = new Set(store.get('ach', []));
     const mv = store.get('musicVol', CONFIG.musicVolume);
@@ -149,19 +150,173 @@ function beep(freq, dur, type = 'square', vol = 1) {
     o.stop(c.currentTime + dur);
 }
 
-const bgm = new Audio('music/bgm.mp3');
-bgm.loop = true;
+const pausePlayerEl = document.getElementById('playerToggle');
+const playerPrev = document.getElementById('playerPrev');
+const playerNext = document.getElementById('playerNext');
+const playerTitle = document.getElementById('playerTitle');
+const playerFill = document.getElementById('playerFill');
+const playerProgress = document.getElementById('playerProgress');
+const playerVol = document.getElementById('playerVol');
+const playerFile = document.getElementById('playerFile');
+const playerListEl = document.getElementById('playerList');
+
+const AUDIO_EXT = /\.(mp3|wav|ogg|m4a|mp4|flac|opus|aac)$/i;
+
+let tracks = [];
+let currentTrackIndex = 0;
+
+const bgm = new Audio();
+bgm.loop = false;
 bgm.volume = CONFIG.musicVolume;
 
+function prettyTitle(filename) {
+    const base = decodeURIComponent(filename.split('/').pop());
+    return base.replace(AUDIO_EXT, '').replace(/[_-]+/g, ' ').trim() || base;
+}
+
+async function loadTracks() {
+    let list = [];
+    try {
+        const r = await fetch('music/', { cache: 'no-store' });
+        if (r.ok) {
+            const html = await r.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            doc.querySelectorAll('a[href]').forEach(a => {
+                const href = a.getAttribute('href');
+                if (href && AUDIO_EXT.test(href) && !href.startsWith('..')) {
+                    const name = href.split('/').pop();
+                    if (!list.some(x => x.file.endsWith(name))) {
+                        list.push({ title: prettyTitle(name), file: 'music/' + name });
+                    }
+                }
+            });
+        }
+    } catch (e) { }
+
+    if (!list.length) {
+        try {
+            const r = await fetch('music/list.json', { cache: 'no-store' });
+            if (r.ok) {
+                const data = await r.json();
+                if (Array.isArray(data)) {
+                    list = data
+                        .filter(f => typeof f === 'string' && AUDIO_EXT.test(f))
+                        .map(f => ({ title: prettyTitle(f), file: 'music/' + f }));
+                }
+            }
+        } catch (e) { }
+    }
+
+    if (!list.length && typeof MUSIC_TRACKS !== 'undefined' && Array.isArray(MUSIC_TRACKS)) {
+        list = MUSIC_TRACKS.slice();
+    }
+    if (!list.length && typeof MUSIC_TRACKS_FALLBACK !== 'undefined') {
+        list = MUSIC_TRACKS_FALLBACK.slice();
+    }
+
+    tracks = list;
+    renderTrackList();
+    return tracks;
+}
+
+function renderTrackList() {
+    if (!playerListEl) return;
+    playerListEl.innerHTML = '';
+    if (!tracks.length) {
+        playerListEl.innerHTML = '<li class="player-item empty">Треков не найдено</li>';
+        return;
+    }
+    tracks.forEach((t, i) => {
+        const li = document.createElement('li');
+        li.className = 'player-item' + (i === currentTrackIndex ? ' active' : '');
+        li.textContent = t.title;
+        li.dataset.index = i;
+        li.addEventListener('click', () => setTrack(i, true));
+        playerListEl.appendChild(li);
+    });
+}
+
+function highlightActive() {
+    if (!playerListEl) return;
+    playerListEl.querySelectorAll('.player-item').forEach(li => {
+        li.classList.toggle('active', parseInt(li.dataset.index, 10) === currentTrackIndex);
+    });
+}
+
+function setTrack(i, autoplay) {
+    if (!tracks.length) return;
+    currentTrackIndex = ((i % tracks.length) + tracks.length) % tracks.length;
+    const track = tracks[currentTrackIndex];
+    bgm.src = track.file;
+    if (playerTitle) playerTitle.textContent = track.title;
+    store.set('trackIndex', currentTrackIndex);
+    highlightActive();
+    if (autoplay && musicEnabled) bgm.play().catch(() => {});
+}
+
 function tryPlayMusic() {
-    if (!musicEnabled) return;
+    if (!musicEnabled || !tracks.length) return;
     bgm.volume = CONFIG.musicVolume;
+    if (!bgm.src) setTrack(currentTrackIndex, false);
     bgm.play().catch(() => {});
 }
+
 function pauseMusic() { bgm.pause(); }
 
+function updatePlayerButton() {
+    if (!pausePlayerEl) return;
+    pausePlayerEl.textContent = bgm.paused ? '▶' : '⏸';
+}
+
+bgm.addEventListener('ended', () => {
+    if (tracks.length > 1) setTrack(currentTrackIndex + 1, true);
+    else if (musicEnabled) { bgm.currentTime = 0; bgm.play().catch(() => {}); }
+});
+
+bgm.addEventListener('timeupdate', () => {
+    if (playerFill && bgm.duration) {
+        playerFill.style.width = (bgm.currentTime / bgm.duration * 100) + '%';
+    }
+});
+
+bgm.addEventListener('play', updatePlayerButton);
+bgm.addEventListener('pause', updatePlayerButton);
 bgm.addEventListener('error', () => {
-    console.warn('Музыка не найдена: music/bgm.mp3');
+    console.warn('Не удалось воспроизвести трек:', bgm.src);
+});
+
+if (playerPrev) playerPrev.addEventListener('click', () => setTrack(currentTrackIndex - 1, true));
+if (playerNext) playerNext.addEventListener('click', () => setTrack(currentTrackIndex + 1, true));
+if (pausePlayerEl) pausePlayerEl.addEventListener('click', () => {
+    if (bgm.paused) tryPlayMusic();
+    else pauseMusic();
+});
+
+if (playerProgress) playerProgress.addEventListener('click', (e) => {
+    const rect = playerProgress.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    if (bgm.duration) bgm.currentTime = ratio * bgm.duration;
+});
+
+if (playerVol) {
+    playerVol.addEventListener('input', () => {
+        const v = playerVol.value / 100;
+        bgm.volume = v;
+        CONFIG.musicVolume = v;
+        saveSettings();
+    });
+}
+
+if (playerFile) playerFile.addEventListener('change', () => {
+    const f = playerFile.files[0];
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    const track = { title: f.name, file: url };
+    const idx = tracks.findIndex(t => t.file === url);
+    if (idx === -1) tracks.push(track);
+    renderTrackList();
+    setTrack(tracks.length - 1, true);
 });
 
 function setDirection(x, y) {
@@ -716,7 +871,18 @@ if (musicBtn) {
     musicBtn.addEventListener('click', () => {
         musicEnabled = !musicEnabled;
         musicBtn.textContent = musicEnabled ? '🎵' : '🔕';
-        if (musicEnabled) tryPlayMusic(); else pauseMusic();
+        
+        if (musicEnabled) {
+            tryPlayMusic(); 
+            if (!store.get('musicWarned', false)) {
+                setTimeout(() => {
+                    alert('🎧 Внимание!\n\nВ игре используется музыка из игр (Minecraft, Stray и др.).\nЕсли вы стримите или записываете видео — отключите музыку, чтобы не получить блокировку за авторские права!');
+                }, 100);
+                store.set('musicWarned', true);
+            }
+        } else {
+            pauseMusic();
+        }
         saveSettings();
     });
 }
@@ -754,6 +920,7 @@ skinButtons.forEach(btn => btn.addEventListener('click', () => {
 musicVolInput?.addEventListener('input', () => {
     CONFIG.musicVolume = musicVolInput.value / 100;
     bgm.volume = CONFIG.musicVolume;
+    if (playerVol) playerVol.value = Math.round(CONFIG.musicVolume * 100);
     saveSettings();
 });
 sfxVolInput?.addEventListener('input', () => {
@@ -772,12 +939,19 @@ reducedMotionToggle?.addEventListener('change', () => {
 
 resetProgressBtn?.addEventListener('click', () => {
     if (!confirm('Сбросить рекорды, статистику и достижения?')) return;
-    ['best_easy', 'best_medium', 'best_hard', 'best_insane', 'stats', 'ach'].forEach(k => store.del(k));
+    ['best_easy', 'best_medium', 'best_hard', 'best_insane', 'stats', 'ach', 'trackIndex'].forEach(k => store.del(k));
     unlockedAch = new Set();
     stats = { games: 0, points: 0, longest: 0, bestScores: [] };
     loadBest();
     showToast('Прогресс сброшен');
 });
+
+if (resetMusicWarnBtn) {
+    resetMusicWarnBtn.addEventListener('click', () => {
+        store.del('musicWarned');
+        showToast('Предупреждение о музыке сброшено');
+    });
+}
 
 document.addEventListener('visibilitychange', () => {
     if (document.hidden && gameState === 'playing') enterPause();
@@ -789,3 +963,10 @@ window.addEventListener('keydown', (e) => {
 
 loadSettings();
 showMenu(false);
+
+loadTracks().then(() => {
+    const savedIdx = store.get('trackIndex', 0);
+    currentTrackIndex = (savedIdx >= 0 && savedIdx < tracks.length) ? savedIdx : 0;
+    if (tracks.length) setTrack(currentTrackIndex, false);
+    if (playerVol) playerVol.value = Math.round(CONFIG.musicVolume * 100);
+});
