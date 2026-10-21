@@ -260,15 +260,33 @@ function setTrack(i, autoplay) {
 
 function tryPlayMusic() {
     if (!musicEnabled || !tracks.length) return;
+    
+    const c = getAudio();
+    if (c && c.state === 'suspended') {
+        c.resume();
+    }
+    
     bgm.volume = CONFIG.musicVolume;
     if (!bgm.src) setTrack(currentTrackIndex, false);
     
-    // Разблокируем аудиоконтекст при клике
-    getAudio();
+    if (bgm.readyState === 0) {
+        bgm.load();
+    }
     
-    bgm.play().catch((err) => {
-        console.warn('Браузер заблокировал автозапуск. Ждем клика...', err);
-    });
+    const playPromise = bgm.play();
+    if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+            console.warn('Браузер заблокировал воспроизведение. Ждем клика...', err);
+            
+            const resumeOnInteraction = () => {
+                bgm.play().catch(() => {});
+                document.removeEventListener('click', resumeOnInteraction);
+                document.removeEventListener('touchstart', resumeOnInteraction);
+            };
+            document.addEventListener('click', resumeOnInteraction);
+            document.addEventListener('touchstart', resumeOnInteraction);
+        });
+    }
 }
 
 function pauseMusic() { bgm.pause(); }
@@ -297,9 +315,18 @@ bgm.addEventListener('error', () => {
 
 if (playerPrev) playerPrev.addEventListener('click', () => setTrack(currentTrackIndex - 1, true));
 if (playerNext) playerNext.addEventListener('click', () => setTrack(currentTrackIndex + 1, true));
+
 if (pausePlayerEl) pausePlayerEl.addEventListener('click', () => {
-    if (bgm.paused) tryPlayMusic();
-    else pauseMusic();
+    if (bgm.paused) {
+        if (!musicEnabled) {
+            musicEnabled = true;
+            if (musicBtn) musicBtn.textContent = '🎵';
+            saveSettings();
+        }
+        tryPlayMusic();
+    } else {
+        pauseMusic();
+    }
 });
 
 if (playerProgress) playerProgress.addEventListener('click', (e) => {
