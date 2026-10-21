@@ -162,6 +162,7 @@ const playerProgress = document.getElementById('playerProgress');
 const playerVol = document.getElementById('playerVol');
 const playerFile = document.getElementById('playerFile');
 const playerListEl = document.getElementById('playerList');
+const playerShuffle = document.getElementById('playerShuffle');
 
 const AUDIO_EXT = /\.(mp3|wav|ogg|m4a|mp4|flac|opus|aac)$/i;
 
@@ -218,10 +219,24 @@ async function loadTracks() {
         list = MUSIC_TRACKS_FALLBACK.slice();
     }
 
+    // Восстановление порядка
+    const savedOrder = store.get('trackOrder', null);
+    if (savedOrder && Array.isArray(savedOrder)) {
+        list.sort((a, b) => {
+            const idxA = savedOrder.indexOf(a.file);
+            const idxB = savedOrder.indexOf(b.file);
+            if (idxA === -1) return 1;
+            if (idxB === -1) return -1;
+            return idxA - idxB;
+        });
+    }
+
     tracks = list;
     renderTrackList();
     return tracks;
 }
+
+let draggedItem = null;
 
 function renderTrackList() {
     if (!playerListEl) return;
@@ -230,14 +245,76 @@ function renderTrackList() {
         playerListEl.innerHTML = '<li class="player-item empty">Треков не найдено</li>';
         return;
     }
+    
     tracks.forEach((t, i) => {
         const li = document.createElement('li');
         li.className = 'player-item' + (i === currentTrackIndex ? ' active' : '');
         li.textContent = t.title;
         li.dataset.index = i;
+        li.draggable = true; 
+        
         li.addEventListener('click', () => setTrack(i, true));
+
+        li.addEventListener('dragstart', (e) => {
+            draggedItem = li;
+            li.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
+        li.addEventListener('dragend', () => {
+            li.classList.remove('dragging');
+            draggedItem = null;
+        });
+
+        li.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const rect = li.getBoundingClientRect();
+            const midY = rect.top + rect.height / 2;
+            if (e.clientY < midY) {
+                li.classList.add('drag-over-top');
+                li.classList.remove('drag-over-bottom');
+            } else {
+                li.classList.add('drag-over-bottom');
+                li.classList.remove('drag-over-top');
+            }
+        });
+
+        li.addEventListener('dragleave', () => {
+            li.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+
+        li.addEventListener('drop', (e) => {
+            e.preventDefault();
+            li.classList.remove('drag-over-top', 'drag-over-bottom');
+            
+            if (draggedItem && draggedItem !== li) {
+                const fromIndex = parseInt(draggedItem.dataset.index, 10);
+                let toIndex = parseInt(li.dataset.index, 10);
+                
+                const rect = li.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                if (e.clientY > midY) {
+                    toIndex++; 
+                }
+
+                const [moved] = tracks.splice(fromIndex, 1);
+                tracks.splice(toIndex, 0, moved);
+                
+                if (currentTrackIndex === fromIndex) currentTrackIndex = toIndex > fromIndex ? toIndex - 1 : toIndex;
+                
+                saveTrackOrder();
+                renderTrackList();
+            }
+        });
+
         playerListEl.appendChild(li);
     });
+}
+
+function saveTrackOrder() {
+    const order = tracks.map(t => t.file);
+    store.set('trackOrder', order);
 }
 
 function highlightActive() {
@@ -328,6 +405,22 @@ if (pausePlayerEl) pausePlayerEl.addEventListener('click', () => {
         pauseMusic();
     }
 });
+
+if (playerShuffle) {
+    playerShuffle.addEventListener('click', () => {
+        for (let i = tracks.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [tracks[i], tracks[j]] = [tracks[j], tracks[i]];
+        }
+        const currentFile = bgm.src;
+        const newIndex = tracks.findIndex(t => t.file === currentFile || currentFile.endsWith(t.file));
+        if (newIndex !== -1) currentTrackIndex = newIndex;
+        
+        saveTrackOrder();
+        renderTrackList();
+        showToast('🔀 Треки перемешаны');
+    });
+}
 
 if (playerProgress) playerProgress.addEventListener('click', (e) => {
     const rect = playerProgress.getBoundingClientRect();
@@ -989,7 +1082,7 @@ reducedMotionToggle?.addEventListener('change', () => {
 
 resetProgressBtn?.addEventListener('click', () => {
     if (!confirm('Сбросить рекорды, статистику и достижения?')) return;
-    ['best_easy', 'best_medium', 'best_hard', 'best_insane', 'stats', 'ach', 'trackIndex'].forEach(k => store.del(k));
+    ['best_easy', 'best_medium', 'best_hard', 'best_insane', 'stats', 'ach', 'trackIndex', 'trackOrder'].forEach(k => store.del(k));
     unlockedAch = new Set();
     stats = { games: 0, points: 0, longest: 0, bestScores: [] };
     loadBest();

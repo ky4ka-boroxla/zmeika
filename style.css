@@ -709,7 +709,6 @@ body.leaving-to-main .pause-menu {
     }
 }
 
-/* === Плеер в меню паузы (теперь он в отдельном меню musicMenu) === */
 .pause-player {
     width: 100%;
     margin: 10px 0 15px;
@@ -797,12 +796,17 @@ body.leaving-to-main .pause-menu {
     padding: 6px 10px;
     color: #a4b0be;
     font-size: 13px;
-    cursor: pointer;
+    cursor: grab;
     border-bottom: 1px solid #2a2e42;
     transition: all 0.15s;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    position: relative;
+    user-select: none;
+}
+.player-item:active {
+    cursor: grabbing;
 }
 .player-item:last-child {
     border-bottom: none;
@@ -825,6 +829,33 @@ body.leaving-to-main .pause-menu {
     cursor: default;
     text-align: center;
 }
+.player-item.dragging {
+    opacity: 0.4;
+    background: #2a2e42;
+}
+.player-item.drag-over-top::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #ffa502;
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(255, 165, 2, 0.8);
+}
+.player-item.drag-over-bottom::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #ffa502;
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(255, 165, 2, 0.8);
+}
+
 .player-vol {
     width: 100px;
     accent-color: #ffa502;
@@ -843,7 +874,6 @@ body.leaving-to-main .pause-menu {
     background: rgba(255, 165, 2, 0.1);
 }
 
-/* Увеличенный список для меню музыки */
 #musicMenu .player-list {
     max-height: 250px;
 }

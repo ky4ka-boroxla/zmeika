@@ -68,7 +68,14 @@
             <div class="player-progress" id="playerProgress">
                 <div class="player-progress-fill" id="playerFill"></div>
             </div>
+            
+            <div class="player-row" style="justify-content: space-between; padding: 0 10px; margin-top: 10px;">
+                <span style="color: #a4b0be; font-size: 12px;">Треки (перетащи для сортировки)</span>
+                <button class="player-btn" id="playerShuffle" title="Перемешать" style="width: 32px; height: 32px; font-size: 14px;">🔀</button>
+            </div>
+            
             <ul class="player-list" id="playerList"></ul>
+            
             <div class="player-row">
                 <input type="range" id="playerVol" min="0" max="100" value="35" class="player-vol">
                 <label class="player-upload">
