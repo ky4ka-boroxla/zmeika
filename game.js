@@ -10,6 +10,7 @@ const settingsMenu = document.getElementById('settingsMenu');
 const statsMenu = document.getElementById('statsMenu');
 const achMenu = document.getElementById('achMenu');
 const recordsMenu = document.getElementById('recordsMenu');
+const musicMenu = document.getElementById('musicMenu');
 const gameOverTitle = document.getElementById('gameOverTitle');
 const startBtn = document.getElementById('startBtn');
 const retryBtn = document.getElementById('retryBtn');
@@ -26,6 +27,8 @@ const settingsBtn = document.getElementById('settingsBtn');
 const statsBtn = document.getElementById('statsBtn');
 const achBtn = document.getElementById('achBtn');
 const recordsBtn = document.getElementById('recordsBtn');
+const musicMenuBtn = document.getElementById('musicMenuBtn');
+const backFromMusic = document.getElementById('backFromMusic');
 const backFromSettings = document.getElementById('backFromSettings');
 const backFromStats = document.getElementById('backFromStats');
 const backFromAch = document.getElementById('backFromAch');
@@ -715,6 +718,7 @@ function startGame() {
     menu.classList.add('hidden');
     gameOverMenu.classList.add('hidden');
     pauseMenu.classList.add('hidden');
+    musicMenu?.classList.add('hidden');
     settingsMenu?.classList.add('hidden');
     statsMenu?.classList.add('hidden');
     achMenu?.classList.add('hidden');
@@ -913,6 +917,17 @@ if (recordsBtn) recordsBtn.addEventListener('click', () => {
     menu.classList.add('hidden');
     recordsMenu.classList.remove('hidden');
 });
+
+if (musicMenuBtn) musicMenuBtn.addEventListener('click', () => {
+    menu.classList.add('hidden');
+    musicMenu.classList.remove('hidden');
+    renderTrackList(); 
+});
+
+if (backFromMusic) backFromMusic.addEventListener('click', () => {
+    musicMenu.classList.add('hidden');
+    menu.classList.remove('hidden');
+});
 backFromSettings?.addEventListener('click', () => { settingsMenu.classList.add('hidden'); menu.classList.remove('hidden'); });
 backFromStats?.addEventListener('click', () => { statsMenu.classList.add('hidden'); menu.classList.remove('hidden'); });
 backFromAch?.addEventListener('click', () => { achMenu.classList.add('hidden'); menu.classList.remove('hidden'); });
@@ -969,7 +984,6 @@ window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && gameState === 'playing') enterPause();
 });
 
-// Разблокировка звука при первом взаимодействии
 function unlockAudio() {
     getAudio();
     if (musicEnabled && bgm.paused && tracks.length) {

@@ -29,6 +29,7 @@
             <button id="recordsBtn">🏆</button>
             <button id="achBtn">🎖</button>
             <button id="settingsBtn">⚙</button>
+            <button id="musicMenuBtn">🎵</button>
         </div>
         <div class="description">🖐️ Свайпы по полю или кнопки на экране</div>
     </div>
@@ -45,31 +46,36 @@
         <div class="pause-card">
             <h2>⏸ ПАУЗА</h2>
             <div class="pause-score">Текущий счёт: <b id="pauseScore">0</b></div>
-
-            <div class="pause-player">
-                <div class="player-row">
-                    <button class="player-btn" id="playerPrev" title="Предыдущий">⏮</button>
-                    <button class="player-btn primary" id="playerToggle" title="Играть/Пауза">▶</button>
-                    <button class="player-btn" id="playerNext" title="Следующий">⏭</button>
-                    <span class="player-title" id="playerTitle">—</span>
-                </div>
-                <div class="player-progress" id="playerProgress">
-                    <div class="player-progress-fill" id="playerFill"></div>
-                </div>
-                <ul class="player-list" id="playerList"></ul>
-                <div class="player-row">
-                    <input type="range" id="playerVol" min="0" max="100" value="35" class="player-vol">
-                    <label class="player-upload">
-                        📂 Загрузить
-                        <input type="file" id="playerFile" accept="audio/*,video/mp4,.mp3,.wav,.ogg,.m4a,.mp4,.flac,.opus,.aac" hidden>
-                    </label>
-                </div>
-            </div>
-
             <button class="primary" id="resumeBtn">▶ Продолжить</button>
             <button id="restartBtn">🔄 Заново</button>
             <button id="toMenuBtn">🏠 В меню</button>
         </div>
+    </div>
+
+    <div class="menu hidden" id="musicMenu">
+        <h1>🎵 Музыка</h1>
+        
+        <div class="pause-player" style="max-width: 400px; width: 100%;">
+            <div class="player-row">
+                <button class="player-btn" id="playerPrev" title="Предыдущий">⏮</button>
+                <button class="player-btn primary" id="playerToggle" title="Играть/Пауза">▶</button>
+                <button class="player-btn" id="playerNext" title="Следующий">⏭</button>
+                <span class="player-title" id="playerTitle">—</span>
+            </div>
+            <div class="player-progress" id="playerProgress">
+                <div class="player-progress-fill" id="playerFill"></div>
+            </div>
+            <ul class="player-list" id="playerList"></ul>
+            <div class="player-row">
+                <input type="range" id="playerVol" min="0" max="100" value="35" class="player-vol">
+                <label class="player-upload">
+                    📂 Загрузить
+                    <input type="file" id="playerFile" accept="audio/*,video/mp4,.mp3,.wav,.ogg,.m4a,.mp4,.flac,.opus,.aac" hidden>
+                </label>
+            </div>
+        </div>
+        
+        <button class="back-btn" id="backFromMusic">← Назад</button>
     </div>
 
     <div class="menu hidden" id="settingsMenu">
