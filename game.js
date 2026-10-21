@@ -259,7 +259,13 @@ function tryPlayMusic() {
     if (!musicEnabled || !tracks.length) return;
     bgm.volume = CONFIG.musicVolume;
     if (!bgm.src) setTrack(currentTrackIndex, false);
-    bgm.play().catch(() => {});
+    
+    // Разблокируем аудиоконтекст при клике
+    getAudio();
+    
+    bgm.play().catch((err) => {
+        console.warn('Браузер заблокировал автозапуск. Ждем клика...', err);
+    });
 }
 
 function pauseMusic() { bgm.pause(); }
@@ -867,6 +873,7 @@ if (soundBtn) {
         saveSettings();
     });
 }
+
 if (musicBtn) {
     musicBtn.addEventListener('click', () => {
         musicEnabled = !musicEnabled;
@@ -877,7 +884,7 @@ if (musicBtn) {
             if (!store.get('musicWarned', false)) {
                 setTimeout(() => {
                     alert('🎧 Внимание!\n\nВ игре используется музыка из игр (Minecraft, Stray и др.).\nЕсли вы стримите или записываете видео — отключите музыку, чтобы не получить блокировку за авторские права!');
-                }, 100);
+                }, 150);
                 store.set('musicWarned', true);
             }
         } else {
@@ -886,6 +893,7 @@ if (musicBtn) {
         saveSettings();
     });
 }
+
 if (settingsBtn) settingsBtn.addEventListener('click', () => {
     menu.classList.add('hidden');
     settingsMenu.classList.remove('hidden');
@@ -960,6 +968,18 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && gameState === 'playing') enterPause();
 });
+
+// Разблокировка звука при первом взаимодействии
+function unlockAudio() {
+    getAudio();
+    if (musicEnabled && bgm.paused && tracks.length) {
+        tryPlayMusic();
+    }
+    document.removeEventListener('click', unlockAudio);
+    document.removeEventListener('touchstart', unlockAudio);
+}
+document.addEventListener('click', unlockAudio);
+document.addEventListener('touchstart', unlockAudio);
 
 loadSettings();
 showMenu(false);
