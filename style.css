@@ -891,14 +891,14 @@ body.leaving-to-main .pause-menu {
 
 /* ===== КНИГА (О ПРЕДМЕТАХ) ===== */
 #aboutMenu {
-    background: rgba(10, 12, 18, 0.95);
-    perspective: 2000px;
+    background: rgba(10, 12, 18, 0.98);
+    perspective: 2500px;
     overflow: hidden;
 }
 
 .book-scene {
     width: 100%;
-    height: 100%;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -906,34 +906,79 @@ body.leaving-to-main .pause-menu {
 }
 
 #aboutMenu.zoomed-out .book-scene {
-    transform: scale(0.3) translateZ(-500px);
+    transform: scale(0.4) translateZ(-400px);
 }
 
 #aboutMenu.zoomed-in .book-scene {
-    transform: scale(1.2) translateZ(200px);
+    transform: scale(1) translateZ(0);
 }
 
 .book {
-    width: 600px;
-    height: 400px;
+    width: 600px; /* 300px обложка + 300px страница */
+    height: 420px;
     position: relative;
     transform-style: preserve-3d;
-    transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(-300px); /* Сдвигаем влево, чтобы в закрытом виде центр был посередине */
 }
 
 .book.open {
-    transform: translateX(150px);
+    transform: translateX(0); /* При открытии сдвигаем обратно */
 }
 
+/* Задняя обложка (слева) */
+.book-back {
+    position: absolute;
+    top: 0; left: 0;
+    width: 300px;
+    height: 420px;
+    background: linear-gradient(135deg, #3e2010, #1a0f06);
+    border: 3px solid #2b1a0b;
+    border-radius: 8px 0 0 8px;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+    z-index: 1;
+}
+
+/* Страницы (справа) */
+.book-pages {
+    position: absolute;
+    top: 0; left: 300px;
+    width: 300px;
+    height: 420px;
+    background: #d1c9b8;
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(139, 126, 102, 0.1) 0%, transparent 20%),
+        radial-gradient(circle at 90% 80%, rgba(139, 126, 102, 0.15) 0%, transparent 30%),
+        url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.15"/></svg>');
+    border: 2px solid #8b7e66;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 
+        inset 10px 0 20px -10px rgba(0,0,0,0.4), 
+        5px 5px 20px rgba(0,0,0,0.6);
+    padding: 30px;
+    box-sizing: border-box;
+    z-index: 2;
+    overflow: hidden;
+}
+
+.book-pages::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0; width: 30px;
+    background: linear-gradient(to right, rgba(0,0,0,0.3), transparent);
+    pointer-events: none;
+}
+
+/* Передняя обложка */
 .book-cover {
     position: absolute;
     top: 0; left: 0;
     width: 300px;
-    height: 400px;
-    background: linear-gradient(135deg, #4a2e15, #2b1a0b);
-    border: 4px solid #1a0f06;
-    border-radius: 4px 10px 10px 4px;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 5px 5px 15px rgba(0,0,0,0.5);
+    height: 420px;
+    background: linear-gradient(135deg, #3e2010, #1a0f06);
+    border: 3px solid #2b1a0b;
+    border-radius: 8px 0 0 8px;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 5px 5px 15px rgba(0,0,0,0.5);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -945,73 +990,54 @@ body.leaving-to-main .pause-menu {
     z-index: 10;
     backface-visibility: hidden;
 }
+
 .book.open .book-cover {
     transform: rotateY(-180deg);
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.8), -5px 5px 15px rgba(0,0,0,0.3);
 }
 
 .book-cover h2 {
     font-size: 32px;
     margin: 0;
     text-shadow: 2px 2px 4px #000;
+    font-family: 'Georgia', serif;
 }
+
 .cover-line {
-    width: 80%;
+    width: 70%;
     height: 2px;
     background: #ffd700;
     margin: 20px 0;
+    opacity: 0.7;
 }
+
 .book-cover p {
     font-size: 14px;
     color: #cba35a;
+    font-family: 'Georgia', serif;
 }
 
-/* === МЕТАЛЛИЧЕСКИЕ УГОЛКИ === */
+/* Металлические уголки */
 .metal-corner {
     position: absolute;
     width: 40px;
     height: 40px;
-    background: linear-gradient(135deg, #888, #444, #aaa, #333);
-    box-shadow: inset 0 0 10px rgba(255,255,255,0.3), 2px 2px 5px rgba(0,0,0,0.5);
-    z-index: 15;
-    clip-path: polygon(0 0, 100% 0, 100% 20%, 20% 20%, 20% 100%, 0 100%);
+    background: linear-gradient(135deg, #aaa, #555, #ccc, #444);
+    box-shadow: inset 0 0 5px rgba(255,255,255,0.6), 2px 2px 5px rgba(0,0,0,0.8);
+    z-index: 20;
 }
-.metal-corner.top-left { top: -4px; left: -4px; border-top-left-radius: 8px; }
-.metal-corner.top-right { top: -4px; right: -4px; transform: rotate(90deg); border-top-left-radius: 8px; }
-.metal-corner.bottom-left { bottom: -4px; left: -4px; transform: rotate(-90deg); border-top-left-radius: 8px; }
-.metal-corner.bottom-right { bottom: -4px; right: -4px; transform: rotate(180deg); border-top-left-radius: 8px; }
-
-/* === ПОТЁРТАЯ БУМАГА === */
-.book-pages {
-    position: absolute;
-    top: 0; left: 300px;
-    width: 300px;
-    height: 400px;
-    background: #d1c9b8;
-    background-image: 
-        radial-gradient(circle at 10% 20%, rgba(139, 126, 102, 0.1) 0%, transparent 20%),
-        radial-gradient(circle at 90% 80%, rgba(139, 126, 102, 0.15) 0%, transparent 30%),
-        url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.15"/></svg>');
-    border: 2px solid #8b7e66;
-    border-radius: 2px 8px 8px 2px;
-    box-shadow: 
-        inset 20px 0 20px -20px rgba(0,0,0,0.5), 
-        inset 0 0 30px rgba(0,0,0,0.1),
-        5px 5px 15px rgba(0,0,0,0.5);
-    padding: 30px;
-    box-sizing: border-box;
-    z-index: 5;
-    overflow: hidden;
+.metal-corner.top-left {
+    top: -3px; left: -3px;
+    border-top-left-radius: 6px;
+    clip-path: polygon(0 0, 100% 0, 100% 12px, 12px 12px, 12px 100%, 0 100%);
+}
+.metal-corner.bottom-left {
+    bottom: -3px; left: -3px;
+    border-bottom-left-radius: 6px;
+    clip-path: polygon(0 0, 12px 0, 12px calc(100% - 12px), 100% calc(100% - 12px), 100% 100%, 0 100%);
 }
 
-.book.open .book-pages {
-    animation: openPages 0.8s 0.3s forwards;
-    opacity: 0;
-}
-
-@keyframes openPages {
-    to { opacity: 1; }
-}
-
+/* Текст */
 .page {
     position: absolute;
     top: 30px; left: 30px; right: 30px; bottom: 60px;
@@ -1029,19 +1055,12 @@ body.leaving-to-main .pause-menu {
     pointer-events: auto;
 }
 
-.page::after {
-    content: '';
-    position: absolute;
-    top: 0; right: -30px; bottom: 0; width: 30px;
-    background: linear-gradient(to left, rgba(0,0,0,0.2), transparent);
-    pointer-events: none;
-}
-
 .page h3 {
-    color: #4a2e15;
+    color: #3e2010;
     border-bottom: 2px solid #8b7e66;
     padding-bottom: 5px;
     margin-top: 0;
+    font-size: 20px;
 }
 .page p {
     font-size: 14px;
@@ -1051,7 +1070,7 @@ body.leaving-to-main .pause-menu {
 
 .book-controls {
     position: absolute;
-    bottom: 10px;
+    bottom: 15px;
     left: 300px;
     width: 300px;
     display: flex;
@@ -1065,16 +1084,18 @@ body.leaving-to-main .pause-menu {
 }
 .book.open .book-controls {
     opacity: 1;
-    transition-delay: 0.8s;
+    transition-delay: 0.4s;
 }
 .book-controls button {
     background: transparent;
     border: 1px solid #4a2e15;
     color: #4a2e15;
-    padding: 5px 10px;
+    padding: 6px 12px;
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
+    font-family: 'Segoe UI', sans-serif;
+    transition: all 0.2s;
 }
 .book-controls button:hover {
     background: #4a2e15;
@@ -1084,6 +1105,7 @@ body.leaving-to-main .pause-menu {
     color: #4a2e15;
     font-size: 14px;
     font-weight: bold;
+    font-family: 'Segoe UI', sans-serif;
 }
 
 #closeBook {
