@@ -84,29 +84,37 @@ body.paused .status {
     transform: scale(1);
 }
 .combo-label {
-    color: #ffd700;
+    color: #a4b0be;
     font-size: 22px;
     font-weight: bold;
-    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.5px;
     line-height: 1.1;
+    transition: color 0.3s, text-shadow 0.3s;
+}
+.combo.active-combo .combo-label {
+    color: #ffd700;
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
 }
 .combo-timer {
-    color: #ffa502;
+    color: #a4b0be;
     font-size: 12px;
     font-weight: bold;
     opacity: 0.85;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.3px;
-    text-shadow: 0 0 6px rgba(255, 165, 2, 0.4);
     line-height: 1;
+    transition: color 0.3s, text-shadow 0.3s;
+}
+.combo.active-combo .combo-timer {
+    color: #ffa502;
+    text-shadow: 0 0 6px rgba(255, 165, 2, 0.4);
 }
 .combo-bar {
     width: 70px;
     height: 3px;
     border-radius: 2px;
-    background: rgba(255, 215, 0, 0.15);
+    background: rgba(164, 176, 190, 0.15);
     overflow: hidden;
     margin-top: 3px;
 }
@@ -115,11 +123,14 @@ body.paused .status {
     height: 100%;
     width: 100%;
     border-radius: 2px;
-    background: linear-gradient(90deg, #ffd700, #ffa502);
-    box-shadow: 0 0 8px rgba(255, 215, 0, 0.7);
+    background: #a4b0be;
     transform: scaleX(var(--combo-progress, 1));
     transform-origin: left center;
-    transition: transform 0.05s linear;
+    transition: transform 0.05s linear, background 0.3s, box-shadow 0.3s;
+}
+.combo.active-combo .combo-bar span {
+    background: linear-gradient(90deg, #ffd700, #ffa502);
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.7);
 }
 
 .menu {

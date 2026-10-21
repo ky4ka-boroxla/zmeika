@@ -58,7 +58,7 @@ let gameState = 'menu';
 let soundEnabled = true;
 let musicEnabled = false;
 let pausedThisGame = false;
-let comboCount = 0;
+let comboCount = 1;
 let comboTimer = 0;
 let lastEatTime = 0;
 let particles = [];
@@ -219,7 +219,6 @@ async function loadTracks() {
         list = MUSIC_TRACKS_FALLBACK.slice();
     }
 
-    // Восстановление порядка
     const savedOrder = store.get('trackOrder', null);
     if (savedOrder && Array.isArray(savedOrder)) {
         list.sort((a, b) => {
@@ -709,7 +708,7 @@ function update() {
 
 function updateComboUI() {
     if (!comboDisplay) return;
-    if (comboCount > 1) {
+    if (comboCount >= 1) {
         comboDisplay.classList.add('visible');
         comboTimer = performance.now();
         if (comboCount >= 5) unlockAch('combo_5');
@@ -720,17 +719,34 @@ function updateComboUI() {
 
 function renderCombo() {
     if (!comboDisplay) return;
-    if (comboCount > 1) {
+    if (comboCount >= 1) { 
         const elapsed = performance.now() - comboTimer;
         const remain = Math.max(0, (CONFIG.comboWindow - elapsed) / 1000);
         const label = comboDisplay.querySelector('.combo-label');
         const timer = comboDisplay.querySelector('.combo-timer');
-        if (label) label.textContent = '🔥 x' + comboCount;
+        
+        if (label) {
+            if (comboCount === 1) {
+                label.textContent = 'x1';
+            } else {
+                label.textContent = '🔥 x' + comboCount;
+            }
+        }
         if (timer) timer.textContent = remain.toFixed(1) + 'с';
         comboDisplay.style.setProperty('--combo-progress', (remain / (CONFIG.comboWindow / 1000)));
+        
+        if (comboCount === 1) {
+            comboDisplay.classList.add('x1-state');
+            comboDisplay.classList.remove('active-combo');
+        } else {
+            comboDisplay.classList.remove('x1-state');
+            comboDisplay.classList.add('active-combo');
+        }
+
         if (remain <= 0) {
-            comboCount = 0;
-            comboDisplay.classList.remove('visible');
+            comboCount = 1;
+            comboDisplay.classList.remove('active-combo');
+            comboDisplay.classList.add('x1-state');
         }
     }
 }
@@ -828,7 +844,7 @@ function startGame() {
     currentSpeed = baseSpeed;
     gameState = 'playing';
     pausedThisGame = false;
-    comboCount = 0;
+    comboCount = 1;
     particles = [];
     shake = 0;
     lastEatTime = 0;
