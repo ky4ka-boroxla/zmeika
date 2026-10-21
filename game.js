@@ -11,6 +11,7 @@ const statsMenu = document.getElementById('statsMenu');
 const achMenu = document.getElementById('achMenu');
 const recordsMenu = document.getElementById('recordsMenu');
 const musicMenu = document.getElementById('musicMenu');
+const aboutMenu = document.getElementById('aboutMenu');
 const gameOverTitle = document.getElementById('gameOverTitle');
 const startBtn = document.getElementById('startBtn');
 const retryBtn = document.getElementById('retryBtn');
@@ -28,6 +29,7 @@ const statsBtn = document.getElementById('statsBtn');
 const achBtn = document.getElementById('achBtn');
 const recordsBtn = document.getElementById('recordsBtn');
 const musicMenuBtn = document.getElementById('musicMenuBtn');
+const aboutBtn = document.getElementById('aboutBtn');
 const backFromMusic = document.getElementById('backFromMusic');
 const backFromSettings = document.getElementById('backFromSettings');
 const backFromStats = document.getElementById('backFromStats');
@@ -41,6 +43,12 @@ const reducedMotionToggle = document.getElementById('reducedMotionToggle');
 const resetProgressBtn = document.getElementById('resetProgressBtn');
 const resetMusicWarnBtn = document.getElementById('resetMusicWarnBtn');
 const toastContainer = document.getElementById('toastContainer');
+
+const book3D = document.getElementById('book3D');
+const closeBook = document.getElementById('closeBook');
+const prevPage = document.getElementById('prevPage');
+const nextPage = document.getElementById('nextPage');
+const pageIndicator = document.getElementById('pageIndicator');
 
 const tileCount = canvas.width / CONFIG.gridSize;
 
@@ -859,6 +867,7 @@ function startGame() {
     statsMenu?.classList.add('hidden');
     achMenu?.classList.add('hidden');
     recordsMenu?.classList.add('hidden');
+    aboutMenu?.classList.add('hidden');
     pauseBtn.classList.remove('hidden');
     pauseBtn.textContent = '⏸';
     document.body.classList.remove('paused', 'leaving-to-main');
@@ -1059,6 +1068,72 @@ if (musicMenuBtn) musicMenuBtn.addEventListener('click', () => {
     musicMenu.classList.remove('hidden');
     renderTrackList(); 
 });
+
+// === ЛОГИКА КНИГИ ===
+let currentPage = 0;
+const pages = document.querySelectorAll('.page');
+const totalPages = pages.length;
+
+function updateBook() {
+    pages.forEach((p, i) => {
+        p.classList.toggle('active', i === currentPage);
+    });
+    if (pageIndicator) pageIndicator.textContent = (currentPage + 1) + ' / ' + totalPages;
+}
+
+if (aboutBtn) {
+    aboutBtn.addEventListener('click', () => {
+        menu.classList.add('hidden'); 
+        aboutMenu.classList.remove('hidden');
+        
+        aboutMenu.classList.remove('zoomed-in');
+        aboutMenu.classList.add('zoomed-out');
+        book3D.classList.remove('open');
+        
+        currentPage = 0;
+        updateBook();
+
+        setTimeout(() => {
+            book3D.classList.add('open');
+            setTimeout(() => {
+                aboutMenu.classList.remove('zoomed-out');
+                aboutMenu.classList.add('zoomed-in');
+            }, 800);
+        }, 100);
+    });
+}
+
+if (prevPage) {
+    prevPage.addEventListener('click', () => {
+        if (currentPage > 0) {
+            currentPage--;
+            updateBook();
+        }
+    });
+}
+
+if (nextPage) {
+    nextPage.addEventListener('click', () => {
+        if (currentPage < totalPages - 1) {
+            currentPage++;
+            updateBook();
+        }
+    });
+}
+
+if (closeBook) {
+    closeBook.addEventListener('click', () => {
+        aboutMenu.classList.remove('zoomed-in');
+        aboutMenu.classList.add('zoomed-out');
+        book3D.classList.remove('open');
+        
+        setTimeout(() => {
+            aboutMenu.classList.add('hidden');
+            aboutMenu.classList.remove('zoomed-out');
+            menu.classList.remove('hidden');
+        }, 800);
+    });
+}
 
 if (backFromMusic) backFromMusic.addEventListener('click', () => {
     musicMenu.classList.add('hidden');

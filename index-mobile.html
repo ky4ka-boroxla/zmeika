@@ -30,6 +30,7 @@
             <button id="achBtn">🎖</button>
             <button id="settingsBtn">⚙</button>
             <button id="musicMenuBtn">🎵</button>
+            <button id="aboutBtn">📖</button>
         </div>
         <div class="description">🖐️ Свайпы по полю или кнопки на экране</div>
     </div>
@@ -128,6 +129,42 @@
         <h1>🏆 Рекорды</h1>
         <ul class="records-list" id="recordsList"></ul>
         <button class="back-btn" id="backFromRecords">← Назад</button>
+    </div>
+
+    <div class="menu hidden" id="aboutMenu">
+        <div class="book-scene" id="bookScene">
+            <div class="book" id="book3D">
+                <div class="book-cover" id="bookCover">
+                    <h2>📖 ЗМЕЙКА</h2>
+                    <div class="cover-line"></div>
+                    <p>История, правила и секреты</p>
+                </div>
+                
+                <div class="book-pages" id="bookPages">
+                    <div class="page active" data-page="0">
+                        <h3>Глава 1. Начало</h3>
+                        <p>Змейка — это классическая аркада, покорившая мир ещё в 1976 году. Твоя цель — управлять змейкой, собирать яблоки и не врезаться в стены или свой хвост.</p>
+                    </div>
+                    <div class="page" data-page="1">
+                        <h3>Глава 2. Еда</h3>
+                        <p>Красное яблоко даёт <b>+10 очков</b>. Если съесть несколько яблок подряд, срабатывает <b>комбо</b> (x2, x3 и т.д.), что умножает очки.</p>
+                        <p>Золотое яблоко (появляется редко) даёт сразу <b>+50 очков</b>, но исчезает через 6 секунд!</p>
+                    </div>
+                    <div class="page" data-page="2">
+                        <h3>Глава 3. Рекорды</h3>
+                        <p>С каждым съеденным яблоком змейка растёт. Чем длиннее она становится, тем сложнее не врезаться в себя.</p>
+                        <p>Все рекорды сохраняются в твоём браузере (localStorage).</p>
+                    </div>
+                </div>
+                
+                <div class="book-controls">
+                    <button id="prevPage">◀ Назад</button>
+                    <span id="pageIndicator">1 / 3</span>
+                    <button id="nextPage">Вперёд ▶</button>
+                </div>
+            </div>
+        </div>
+        <button class="back-btn" id="closeBook">✖ Закрыть книгу</button>
     </div>
 
     <canvas id="gameCanvas" width="400" height="400"></canvas>
