@@ -8,7 +8,7 @@
     <meta property="og:description" content="Классическая змейка с комбо, золотой едой, скинами и достижениями">
     <meta property="og:image" content="docs/preview/preview.png">
     <meta name="theme-color" content="#12141c">
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
     <link rel="apple-touch-icon" href="icon-180.png">
     <title>Змейка</title>
@@ -205,8 +205,6 @@
     <script src="config.js"></script>
     <script src="game.js"></script>
     <script src="input.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
-    </script>
+    <script src="pwa.js"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 const CACHE = 'snake-v2';
 const ASSETS = [
     './', './index.html', './style.css', './extra.css',
-    './config.js', './game.js', './input.js', './manifest.json',
+    './config.js', './game.js', './manifest.webmanifest', './pwa.js', './input.js',
     './icon-32.png', './icon-180.png', './icon-192.png', './icon-512.png'
 ];
 
