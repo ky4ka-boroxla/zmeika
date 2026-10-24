@@ -50,16 +50,34 @@ const prevPage = document.getElementById('prevPage');
 const nextPage = document.getElementById('nextPage');
 const pageIndicator = document.getElementById('pageIndicator');
 
-const tileCount = canvas.width / CONFIG.gridSize;
+const LOGICAL = 400;
+const dpr = Math.min(window.devicePixelRatio || 1, 3);
+canvas.width = LOGICAL * dpr;
+canvas.height = LOGICAL * dpr;
+canvas.style.width = LOGICAL + 'px';
+const tileCount = LOGICAL / CONFIG.gridSize;
+const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+function clearCanvas() {
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+}
 
 let snake = [];
 let direction = { x: 1, y: 0 };
-let nextDirection = { x: 1, y: 0 };
-let directionChanged = false;
+let dirQueue = [];
 let food = { x: 0, y: 0, gold: false, born: 0 };
 let score = 0;
 let gameLoopRAF = null;
 let lastTick = 0;
+let lastFrame = 0;
+let speedLevel = 0;
+let pausedAt = 0;
+let endedAt = 0;
+let endTimer = null;
+let musicPausedByHidden = false;
 let baseSpeed = CONFIG.speeds.easy;
 let currentSpeed = baseSpeed;
 let gameState = 'menu';
@@ -89,7 +107,7 @@ const store = {
     del(k) { try { localStorage.removeItem(CONFIG.storagePrefix + k); } catch {} }
 };
 
-const bestKey = (speed) => 'best_' + speed;
+const bestKey = (speed) => 'best_' + speed + (wrapMode ? '_wrap' : '');
 
 function loadBest() {
     const val = store.get(bestKey(baseSpeed), 0);
@@ -120,6 +138,7 @@ function loadSettings() {
     if (soundBtn) soundBtn.textContent = soundEnabled ? '🔊' : '🔇';
     if (musicBtn) musicBtn.textContent = musicEnabled ? '🎵' : '🔕';
     if (store.get('reducedMotion', false)) document.body.classList.add('force-reduced-motion');
+    if (reducedMotionToggle) reducedMotionToggle.checked = store.get('reducedMotion', false);
     applySkin();
 }
 
@@ -152,13 +171,17 @@ function beep(freq, dur, type = 'square', vol = 1) {
     if (!c) return;
     const o = c.createOscillator();
     const g = c.createGain();
+    const t0 = c.currentTime;
+    const peak = Math.max(0.0002, 0.05 * CONFIG.sfxVolume * vol);
     o.type = type;
     o.frequency.value = freq;
-    g.gain.value = 0.05 * CONFIG.sfxVolume * vol;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(peak, t0 + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
     o.connect(g);
     g.connect(c.destination);
-    o.start();
-    o.stop(c.currentTime + dur);
+    o.start(t0);
+    o.stop(t0 + dur + 0.02);
 }
 
 const pausePlayerEl = document.getElementById('playerToggle');
@@ -456,15 +479,35 @@ if (playerFile) playerFile.addEventListener('change', () => {
 });
 
 function setDirection(x, y) {
+    if (gameState === 'ready') {
+        direction = { x, y };
+        dirQueue = [];
+        gameState = 'playing';
+        statusEl.textContent = '';
+        statusEl.classList.remove('hint');
+        prevSnake = snake.map(s => ({ ...s }));
+        lastTick = performance.now();
+        if (musicPausedByHidden) {
+            musicPausedByHidden = false;
+            tryPlayMusic();
+        }
+        return;
+    }
     if (gameState !== 'playing') return;
-    if (directionChanged) return;
-    if (direction.x === -x && direction.y === -y) return;
-    if (direction.x === x && direction.y === y) return;
-    nextDirection = { x, y };
-    directionChanged = true;
+    const last = dirQueue.length ? dirQueue[dirQueue.length - 1] : direction;
+    if (last.x === x && last.y === y) return;
+    if (last.x === -x && last.y === -y) return;
+    if (dirQueue.length >= 2) return;
+    dirQueue.push({ x, y });
 }
 
-function generateFood() {
+function requestStart() {
+    if ((gameState === 'gameover' || gameState === 'win') && performance.now() - endedAt < 600) return;
+    getAudio();
+    startGame();
+}
+
+function generateFood(forceNormal) {
     const snakeSet = new Set(snake.map(s => s.x + ',' + s.y));
     const freeCells = [];
     for (let i = 0; i < tileCount; i++) {
@@ -482,7 +525,7 @@ function generateFood() {
     const far = freeCells.filter(c => Math.abs(c.x - head.x) + Math.abs(c.y - head.y) > 2);
     const pool = far.length ? far : freeCells;
     const spot = pool[Math.floor(Math.random() * pool.length)];
-    const isGold = Math.random() < CONFIG.goldChance;
+    const isGold = !forceNormal && Math.random() < CONFIG.goldChance;
     food = { x: spot.x, y: spot.y, gold: isGold, born: performance.now() };
     return true;
 }
@@ -549,8 +592,8 @@ function drawGrid() {
     ctx.strokeStyle = 'rgba(255,165,2,0.05)';
     ctx.lineWidth = 1;
     for (let i = 1; i < tileCount; i++) {
-        ctx.beginPath(); ctx.moveTo(i * gs, 0); ctx.lineTo(i * gs, canvas.height); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, i * gs); ctx.lineTo(canvas.width, i * gs); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(i * gs, 0); ctx.lineTo(i * gs, LOGICAL); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i * gs); ctx.lineTo(LOGICAL, i * gs); ctx.stroke();
     }
 }
 
@@ -583,10 +626,13 @@ function drawFood(now) {
 
 function interpolatedSnake() {
     if (!snakeSnapshot) return snake;
-    const t = Math.min(1, (performance.now() - lastTick) / currentSpeed);
+    const t = Math.max(0, Math.min(1, (performance.now() - lastTick) / currentSpeed));
     return snake.map((s, i) => {
         const prev = prevSnake?.[i] || snake[i + 1] || s;
-        return { x: prev.x + (s.x - prev.x) * t, y: prev.y + (s.y - prev.y) * t };
+        const dx = s.x - prev.x;
+        const dy = s.y - prev.y;
+        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) return { x: s.x, y: s.y };
+        return { x: prev.x + dx * t, y: prev.y + dy * t };
     });
 }
 
@@ -604,13 +650,13 @@ function adjustColor(hex, percent) {
 function draw() {
     const now = performance.now();
     ctx.save();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, LOGICAL, LOGICAL);
     if (shake > 0) {
         ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
         shake *= 0.85;
         if (shake < 0.5) shake = 0;
     }
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawGrid();
 
     const skinDef = SKINS[skin] || SKINS.classic;
@@ -620,11 +666,12 @@ function draw() {
     if (interp.length > 0) {
         const hx = interp[0].x;
         const hy = interp[0].y;
+        const headColor = gameState === 'gameover' ? '#ff4757' : skinDef.head;
         if (skinDef.glow) {
-            ctx.shadowColor = skinDef.head;
+            ctx.shadowColor = headColor;
             ctx.shadowBlur = 14;
         }
-        ctx.fillStyle = skinDef.head;
+        ctx.fillStyle = headColor;
         ctx.beginPath();
         roundRectPath(hx * gs + 1, hy * gs + 1, gs - 2, gs - 2, skinDef.square ? 0 : 6);
         ctx.fill();
@@ -663,8 +710,7 @@ function draw() {
 }
 
 function update() {
-    direction = nextDirection;
-    directionChanged = false;
+    if (dirQueue.length) direction = dirQueue.shift();
     prevSnake = snake.map(s => ({ ...s }));
 
     const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
@@ -676,15 +722,17 @@ function update() {
         return die();
     }
 
-    for (let i = 0; i < snake.length - 1; i++) {
+    const willEat = head.x === food.x && head.y === food.y;
+    const limit = willEat ? snake.length : snake.length - 1;
+    for (let i = 0; i < limit; i++) {
         if (snake[i].x === head.x && snake[i].y === head.y) return die();
     }
 
     snake.unshift(head);
 
-    if (head.x === food.x && head.y === food.y) {
+    if (willEat) {
         const now = performance.now();
-        if (now - lastEatTime < CONFIG.comboWindow && comboCount < CONFIG.comboMax) {
+        if (lastEatTime && now - lastEatTime < CONFIG.comboWindow && comboCount < CONFIG.comboMax) {
             comboCount++;
         } else {
             comboCount = 1;
@@ -704,8 +752,13 @@ function update() {
 
         checkAchievements();
 
-        if (score % CONFIG.speedEvery === 0 && currentSpeed > CONFIG.minSpeed) {
-            currentSpeed = Math.max(CONFIG.minSpeed, currentSpeed - CONFIG.speedStep);
+        const level = Math.floor(score / CONFIG.speedEvery);
+        if (level > speedLevel) {
+            const steps = level - speedLevel;
+            speedLevel = level;
+            if (currentSpeed > CONFIG.minSpeed) {
+                currentSpeed = Math.max(CONFIG.minSpeed, currentSpeed - CONFIG.speedStep * steps);
+            }
         }
         if (!generateFood()) return;
     } else {
@@ -768,25 +821,29 @@ function die() {
 }
 
 function finishGame(title) {
-    stopLoop();
+    endedAt = performance.now();
     pauseMusic();
     saveBest();
     const best = loadBest();
     finalScore.textContent = 'Очки: ' + score + '   |   Рекорд: ' + best;
 
     stats.games++;
-    stats.bestScores.push({ score, speed: baseSpeed, date: Date.now() });
+    stats.bestScores.push({ score, speed: baseSpeed, wrap: wrapMode, date: Date.now() });
     stats.bestScores.sort((a, b) => b.score - a.score);
     stats.bestScores = stats.bestScores.slice(0, 10);
     store.set('stats', stats);
     if (!pausedThisGame && score >= 200) unlockAch('no_pause');
 
     if (gameOverTitle) gameOverTitle.textContent = title;
-    gameOverMenu.classList.remove('hidden');
     pauseBtn.classList.add('hidden');
+    clearTimeout(endTimer);
+    endTimer = setTimeout(() => {
+        if (gameState === 'gameover' || gameState === 'win') gameOverMenu.classList.remove('hidden');
+    }, 450);
 }
 
 function checkAchievements() {
+    unlockAch('first_food');
     if (snake.length >= 15) unlockAch('len_15');
     if (snake.length >= 30) unlockAch('len_30');
     if (score >= 100) unlockAch('score_100');
@@ -817,22 +874,27 @@ function showToast(text) {
 
 function loopRAF(t) {
     gameLoopRAF = requestAnimationFrame(loopRAF);
-    const dt = t - (lastTick || t);
+    const dt = Math.min(50, t - (lastFrame || t));
+    lastFrame = t;
     updateParticles(dt);
     if (gameState === 'playing') {
+        if (food.gold && t - food.born >= CONFIG.goldLifetime) generateFood(true);
         if (t - lastTick >= currentSpeed) {
-            lastTick = t;
-            update(dt);
+            lastTick += currentSpeed;
+            if (t - lastTick >= currentSpeed) lastTick = t;
+            update();
             snakeSnapshot = snake;
         }
     }
     renderCombo();
     draw();
+    if ((gameState === 'gameover' || gameState === 'win') && !particles.length && shake === 0) stopLoop();
 }
 
 function startLoop() {
     stopLoop();
     lastTick = performance.now();
+    lastFrame = 0;
     gameLoopRAF = requestAnimationFrame(loopRAF);
 }
 
@@ -843,14 +905,17 @@ function stopLoop() {
 
 function startGame() {
     stopLoop();
+    clearTimeout(endTimer);
+    musicPausedByHidden = false;
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     menu.classList.remove('entering');
     snake = [{ x: 10, y: 10 }];
     direction = { x: 1, y: 0 };
-    nextDirection = { x: 1, y: 0 };
-    directionChanged = false;
+    dirQueue = [];
     score = 0;
+    speedLevel = 0;
     currentSpeed = baseSpeed;
-    gameState = 'playing';
+    gameState = 'ready';
     pausedThisGame = false;
     comboCount = 1;
     particles = [];
@@ -858,7 +923,8 @@ function startGame() {
     lastEatTime = 0;
     scoreDisplay.textContent = 'Очки: 0';
     if (comboDisplay) comboDisplay.classList.remove('visible');
-    statusEl.textContent = '';
+    statusEl.textContent = isTouch ? 'Свайпни или нажми стрелку' : 'Нажми стрелку или WASD';
+    statusEl.classList.add('hint');
     menu.classList.add('hidden');
     gameOverMenu.classList.add('hidden');
     pauseMenu.classList.add('hidden');
@@ -882,6 +948,7 @@ function startGame() {
 
 function enterPause() {
     gameState = 'paused';
+    pausedAt = performance.now();
     pausedThisGame = true;
     stopLoop();
     if (pauseScoreEl) pauseScoreEl.textContent = score;
@@ -904,9 +971,17 @@ function resumeGame() {
         pauseMenu.classList.add('hidden');
         pauseMenu.classList.remove('leaving');
     }, 400);
+    const gap = performance.now() - pausedAt;
+    if (lastEatTime) lastEatTime += gap;
+    comboTimer += gap;
+    food.born += gap;
     gameState = 'playing';
     pauseBtn.textContent = '⏸';
     bgm.volume = CONFIG.musicVolume;
+    if (musicPausedByHidden) {
+        musicPausedByHidden = false;
+        tryPlayMusic();
+    }
     startLoop();
 }
 
@@ -917,7 +992,9 @@ function togglePause() {
 
 function showMenu(animated) {
     gameState = 'menu';
+    clearTimeout(endTimer);
     stopLoop();
+    statusEl.classList.remove('hint');
     bgm.volume = CONFIG.musicVolume;
 
     if (animated) {
@@ -936,7 +1013,7 @@ function showMenu(animated) {
             setTimeout(() => menu.classList.remove('entering'), 750);
             gameOverMenu.classList.add('hidden');
             pauseBtn.classList.add('hidden');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            clearCanvas();
             statusEl.textContent = '';
             scoreDisplay.textContent = 'Очки: 0';
             loadBest();
@@ -949,7 +1026,7 @@ function showMenu(animated) {
         menu.classList.remove('hidden', 'entering');
         gameOverMenu.classList.add('hidden');
         pauseBtn.classList.add('hidden');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        clearCanvas();
         statusEl.textContent = '';
         scoreDisplay.textContent = 'Очки: 0';
         loadBest();
@@ -975,7 +1052,8 @@ function renderRecords() {
         const li = document.createElement('li');
         const date = new Date(r.date).toLocaleDateString();
         const spd = r.speed === 200 ? 'Лёгкий' : r.speed === 130 ? 'Средний' : r.speed === 80 ? 'Сложный' : 'Хардкор';
-        li.innerHTML = `<span class="rank">#${i + 1}</span><span class="pts">${r.score}</span><span class="meta">${spd} · ${date}</span>`;
+        const mode = r.wrap ? ' · без стен' : '';
+        li.innerHTML = `<span class="rank">#${i + 1}</span><span class="pts">${r.score}</span><span class="meta">${spd}${mode} · ${date}</span>`;
         list.appendChild(li);
     });
 }
@@ -1069,7 +1147,6 @@ if (musicMenuBtn) musicMenuBtn.addEventListener('click', () => {
     renderTrackList(); 
 });
 
-// === ЛОГИКА КНИГИ ===
 let currentPage = 0;
 const pages = document.querySelectorAll('.page');
 const totalPages = pages.length;
@@ -1148,7 +1225,7 @@ skinButtons.forEach(btn => btn.addEventListener('click', () => {
     skin = btn.dataset.skin;
     applySkin();
     saveSettings();
-    if (gameState === 'menu') { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+    if (gameState === 'menu') { clearCanvas(); }
 }));
 
 musicVolInput?.addEventListener('input', () => {
@@ -1164,6 +1241,7 @@ sfxVolInput?.addEventListener('input', () => {
 wrapToggle?.addEventListener('change', () => {
     wrapMode = wrapToggle.checked;
     saveSettings();
+    loadBest();
 });
 reducedMotionToggle?.addEventListener('change', () => {
     document.body.classList.toggle('force-reduced-motion', reducedMotionToggle.checked);
@@ -1173,7 +1251,9 @@ reducedMotionToggle?.addEventListener('change', () => {
 
 resetProgressBtn?.addEventListener('click', () => {
     if (!confirm('Сбросить рекорды, статистику и достижения?')) return;
-    ['best_easy', 'best_medium', 'best_hard', 'best_insane', 'stats', 'ach', 'trackIndex', 'trackOrder'].forEach(k => store.del(k));
+    const keys = ['best_easy', 'best_medium', 'best_hard', 'best_insane', 'stats', 'ach', 'trackIndex', 'trackOrder'];
+    Object.values(CONFIG.speeds).forEach(v => keys.push('best_' + v, 'best_' + v + '_wrap'));
+    keys.forEach(k => store.del(k));
     unlockedAch = new Set();
     stats = { games: 0, points: 0, longest: 0, bestScores: [] };
     loadBest();
@@ -1187,13 +1267,18 @@ if (resetMusicWarnBtn) {
     });
 }
 
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden && gameState === 'playing') enterPause();
-});
+function autoPause() {
+    if (gameState === 'playing') enterPause();
+    if ((gameState === 'paused' || gameState === 'ready') && !bgm.paused) {
+        bgm.pause();
+        musicPausedByHidden = true;
+    }
+}
 
-window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && gameState === 'playing') enterPause();
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) autoPause();
 });
+window.addEventListener('blur', autoPause);
 
 function unlockAudio() {
     getAudio();

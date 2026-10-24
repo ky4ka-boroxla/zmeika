@@ -1,13 +1,12 @@
-const CACHE = 'snake-v1';
+const CACHE = 'snake-v2';
 const ASSETS = [
-    './', './index.html', './index-mobile.html',
-    './style.css', './desktop.css', './mobile.css',
-    './config.js', './game.js', './desktop.js', './mobile.js',
-    './manifest.json', './music/bgm.mp3'
+    './', './index.html', './style.css', './extra.css',
+    './config.js', './game.js', './input.js', './manifest.json',
+    './icon-32.png', './icon-180.png', './icon-192.png', './icon-512.png'
 ];
 
 self.addEventListener('install', e => {
-    e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS).catch(() => {})));
+    e.waitUntil(caches.open(CACHE).then(c => Promise.all(ASSETS.map(a => c.add(a).catch(() => {})))));
     self.skipWaiting();
 });
 
@@ -17,13 +16,16 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-    e.respondWith(
-        caches.match(e.request).then(r => r || fetch(e.request).then(resp => {
-            if (resp.ok && e.request.method === 'GET') {
-                const clone = resp.clone();
-                caches.open(CACHE).then(c => c.put(e.request, clone));
-            }
+    const req = e.request;
+    const url = new URL(req.url);
+    if (req.method !== 'GET' || url.origin !== location.origin) return;
+    if (req.headers.has('range') || url.pathname.includes('/music/')) return;
+    e.respondWith(caches.open(CACHE).then(async cache => {
+        const cached = await cache.match(req);
+        const network = fetch(req).then(resp => {
+            if (resp.ok) cache.put(req, resp.clone());
             return resp;
-        }).catch(() => caches.match('./index.html')))
-    );
+        }).catch(() => null);
+        return cached || (await network) || cache.match('./index.html');
+    }));
 });

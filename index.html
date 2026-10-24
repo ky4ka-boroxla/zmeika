@@ -3,11 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Змейка: 4 уровня скорости, комбо, золотая еда, скины и достижения">
+    <meta property="og:title" content="Змейка">
+    <meta property="og:description" content="Классическая змейка с комбо, золотой едой, скинами и достижениями">
+    <meta property="og:image" content="docs/preview/preview.png">
     <meta name="theme-color" content="#12141c">
     <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+    <link rel="apple-touch-icon" href="icon-180.png">
     <title>Змейка</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="desktop.css">
+    <link rel="stylesheet" href="extra.css">
 </head>
 <body>
     <button class="sound-btn" id="soundBtn" title="Звук">🔊</button>
@@ -21,7 +27,6 @@
             <button data-speed="130">Средний</button>
             <button data-speed="80">Сложный</button>
             <button data-speed="40">Хардкор</button>
-            <a href="index-mobile.html" class="mobile-switch-btn">📱 Мобилка</a>
         </div>
         <div class="best-score" id="bestScore">Рекорд: 0</div>
         <button class="start-btn" id="startBtn">▶ СТАРТ</button>
@@ -33,9 +38,10 @@
             <button id="musicMenuBtn">🎵 Музыка</button>
             <button id="aboutBtn">📖 О предметах</button>
         </div>
-        <div class="description">
-            Управление: <span>⬆ ⬇ ⬅ ➡</span> | Пробел / Esc — пауза
+        <div class="description desc-keys">
+            Управление: <span>⬆ ⬇ ⬅ ➡</span> или <span>WASD</span> | Пробел / Esc — пауза
         </div>
+        <div class="description desc-touch">🖐️ Свайпы по полю или кнопки на экране</div>
     </div>
 
     <div class="menu hidden" id="gameOverMenu">
@@ -135,14 +141,11 @@
         <button class="back-btn" id="backFromRecords">← Назад</button>
     </div>
 
-    <!-- БЛОК КНИГИ -->
     <div class="menu hidden" id="aboutMenu">
         <div class="book-scene" id="bookScene">
             <div class="book" id="book3D">
-                <!-- Задняя обложка -->
                 <div class="book-back"></div>
 
-                <!-- Передняя обложка -->
                 <div class="book-cover" id="bookCover">
                     <div class="metal-corner top-left"></div>
                     <div class="metal-corner bottom-left"></div>
@@ -151,7 +154,6 @@
                     <p>История и предметы</p>
                 </div>
                 
-                <!-- Страницы -->
                 <div class="book-pages" id="bookPages">
                     <div class="page active" data-page="0">
                         <h3>Глава 1. Начало</h3>
@@ -189,11 +191,20 @@
         <div class="score" id="score">Очки: 0</div>
     </div>
 
+    <div class="touch-controls">
+        <div class="touch-row"><button class="touch-btn" data-dir="up">▲</button></div>
+        <div class="touch-row">
+            <button class="touch-btn" data-dir="left">◀</button>
+            <button class="touch-btn" data-dir="down">▼</button>
+            <button class="touch-btn" data-dir="right">▶</button>
+        </div>
+    </div>
+
     <div class="toast-container" id="toastContainer"></div>
 
     <script src="config.js"></script>
     <script src="game.js"></script>
-    <script src="desktop.js"></script>
+    <script src="input.js"></script>
     <script>
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
     </script>
