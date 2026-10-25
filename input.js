@@ -11,6 +11,7 @@ function startAllowed() {
 
 document.addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (document.querySelector('.modal-root')) return;
     const code = e.code;
     if (code === 'Space' || code === 'Enter' || code === 'NumpadEnter') {
         if (gameState === 'playing' || gameState === 'paused') {
@@ -40,6 +41,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 document.addEventListener('keyup', (e) => {
+    if (document.querySelector('.modal-root')) return;
     if ((e.code === 'Space' || e.code === 'Enter') && gameState !== 'menu') e.preventDefault();
 });
 

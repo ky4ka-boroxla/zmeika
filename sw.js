@@ -1,8 +1,11 @@
-const CACHE = 'snake-v2';
+const CACHE = 'snake-v3';
 const ASSETS = [
-    './', './index.html', './style.css', './extra.css',
-    './config.js', './game.js', './input.js', './manifest.json',
-    './icon-32.png', './icon-180.png', './icon-192.png', './icon-512.png'
+    './', './index.html', './style.css', './extra.css', './ui.css',
+    './config.js', './game.js', './ui.js', './player.js', './book.js', './input.js', './pwa.js', './popup.js',
+    './manifest.webmanifest',
+    './icon-32.png', './icon-180.png', './icon-192.png', './icon-512.png',
+    './book/emblem.png', './book/paper.png', './book/intro.png', './book/apple.png', './book/gold.png',
+    './book/combo.png', './book/speed.png', './book/walls.png', './book/skins.png'
 ];
 
 self.addEventListener('install', e => {

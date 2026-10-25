@@ -8,14 +8,17 @@
     <meta property="og:description" content="Классическая змейка с комбо, золотой едой, скинами и достижениями">
     <meta property="og:image" content="docs/preview/preview.png">
     <meta name="theme-color" content="#12141c">
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
     <link rel="apple-touch-icon" href="icon-180.png">
     <title>Змейка</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="extra.css">
+    <link rel="stylesheet" href="ui.css">
+    <script src="popup.js"></script>
 </head>
 <body>
+    <button class="open-tab-btn" id="openTabBtn" title="Открыть во вкладке" hidden>↗</button>
     <button class="sound-btn" id="soundBtn" title="Звук">🔊</button>
     <button class="music-btn" id="musicBtn" title="Музыка">🔕</button>
     <button class="pause-btn hidden" id="pauseBtn" title="Пауза">⏸</button>
@@ -36,7 +39,7 @@
             <button id="achBtn">🎖 Достижения</button>
             <button id="settingsBtn">⚙ Настройки</button>
             <button id="musicMenuBtn">🎵 Музыка</button>
-            <button id="aboutBtn">📖 О предметах</button>
+            <button id="aboutBtn">📖 Книга предметов</button>
         </div>
         <div class="description desc-keys">
             Управление: <span>⬆ ⬇ ⬅ ➡</span> или <span>WASD</span> | Пробел / Esc — пауза
@@ -64,34 +67,47 @@
 
     <div class="menu hidden" id="musicMenu">
         <h1>🎵 Музыка</h1>
-        
-        <div class="pause-player" style="max-width: 400px; width: 100%;">
-            <div class="player-row">
-                <button class="player-btn" id="playerPrev" title="Предыдущий">⏮</button>
-                <button class="player-btn primary" id="playerToggle" title="Играть/Пауза">▶</button>
-                <button class="player-btn" id="playerNext" title="Следующий">⏭</button>
-                <span class="player-title" id="playerTitle">—</span>
+        <div class="player empty" id="player">
+            <div class="player-top">
+                <div class="deck" id="playerDeck">
+                    <div class="disc" id="playerDisc"><div class="disc-label"></div></div>
+                    <div class="tonearm"><span class="arm-rod"></span><span class="arm-head"></span></div>
+                    <span class="arm-pivot"></span>
+                </div>
+                <div class="player-info">
+                    <div class="player-title" id="playerTitle">Нет треков</div>
+                    <div class="player-sub" id="playerSub">Добавь свои файлы ниже</div>
+                    <canvas class="viz" id="playerViz" aria-hidden="true"></canvas>
+                </div>
             </div>
-            <div class="player-progress" id="playerProgress">
-                <div class="player-progress-fill" id="playerFill"></div>
+            <div class="seek" id="playerSeek">
+                <div class="seek-fill" id="playerFill"></div>
+                <div class="seek-knob" id="playerKnob"></div>
             </div>
-            
-            <div class="player-row" style="justify-content: space-between; padding: 0 10px; margin-top: 10px;">
-                <span style="color: #a4b0be; font-size: 12px;">Треки (перетащи для сортировки)</span>
-                <button class="player-btn" id="playerShuffle" title="Перемешать" style="width: 32px; height: 32px; font-size: 14px;">🔀</button>
+            <div class="player-times"><span id="playerCur">0:00</span><span id="playerDur">0:00</span></div>
+            <div class="player-controls">
+                <button class="pbtn small toggle" id="playerShuffle" title="Случайный порядок"></button>
+                <button class="pbtn" id="playerPrev" title="Предыдущий"></button>
+                <button class="pbtn main" id="playerToggle" title="Играть / пауза"></button>
+                <button class="pbtn" id="playerNext" title="Следующий"></button>
+                <button class="pbtn small toggle" id="playerRepeat" title="Повтор"></button>
             </div>
-            
-            <ul class="player-list" id="playerList"></ul>
-            
-            <div class="player-row">
-                <input type="range" id="playerVol" min="0" max="100" value="35" class="player-vol">
-                <label class="player-upload">
-                    📂 Загрузить
-                    <input type="file" id="playerFile" accept="audio/*,video/mp4,.mp3,.wav,.ogg,.m4a,.mp4,.flac,.opus,.aac" hidden>
-                </label>
+            <div class="player-volume">
+                <button class="pbtn small" id="playerMute" title="Без звука"></button>
+                <input type="range" id="playerVol" min="0" max="100" value="35" class="player-vol" aria-label="Громкость">
             </div>
+            <div class="player-empty" id="playerEmpty" hidden>
+                <div class="empty-art"><span></span><span></span><span></span><span></span></div>
+                <h4>Здесь пока тихо</h4>
+                <p>Добавь свои треки: они сохранятся в браузере и никуда не загружаются. Можно просто перетащить файлы сюда.</p>
+            </div>
+            <ul class="track-list" id="playerList" hidden></ul>
+            <div class="player-add">
+                <label class="add-btn"><span>＋ Файлы</span><input type="file" id="playerFile" accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac,.opus,.aac" multiple hidden></label>
+                <label class="add-btn folder"><span>📁 Папка</span><input type="file" id="playerFolder" webkitdirectory hidden></label>
+            </div>
+            <div class="player-drop-hint">Отпусти файлы, чтобы добавить</div>
         </div>
-        
         <button class="back-btn" id="backFromMusic">← Назад</button>
     </div>
 
@@ -114,7 +130,7 @@
             <label><input type="checkbox" id="wrapToggle"> Проходить сквозь стены</label>
             <label><input type="checkbox" id="reducedMotionToggle"> Уменьшить анимации</label>
         </div>
-        <button class="back-btn" id="resetMusicWarnBtn" style="margin-top: 10px;">🔔 Сбросить предупреждение о музыке</button>
+        <button class="back-btn" id="resetMusicWarnBtn">🔔 Показать предупреждение о музыке снова</button>
         <button class="danger-btn" id="resetProgressBtn">🗑 Сбросить прогресс</button>
         <button class="back-btn" id="backFromSettings">← Назад</button>
     </div>
@@ -142,42 +158,24 @@
     </div>
 
     <div class="menu hidden" id="aboutMenu">
-        <div class="book-scene" id="bookScene">
-            <div class="book" id="book3D">
-                <div class="book-back"></div>
-
-                <div class="book-cover" id="bookCover">
-                    <div class="metal-corner top-left"></div>
-                    <div class="metal-corner bottom-left"></div>
-                    <h2>📖 ЗМЕЙКА</h2>
-                    <div class="cover-line"></div>
-                    <p>История и предметы</p>
-                </div>
-                
-                <div class="book-pages" id="bookPages">
-                    <div class="page active" data-page="0">
-                        <h3>Глава 1. Начало</h3>
-                        <p>Давным-давно, в мире пикселей и теней, родилась первая змейка. Она не знала ни страха, ни границ...</p>
-                    </div>
-                    <div class="page" data-page="1">
-                        <h3>Глава 2. Предметы</h3>
-                        <p><b>🍎 Красное яблоко:</b> +10 очков.</p>
-                        <p><b>🌟 Золотое яблоко:</b> +50 очков.</p>
-                    </div>
-                    <div class="page" data-page="2">
-                        <h3>Глава 3. Рекорды</h3>
-                        <p>С каждым съеденным яблоком змейка растёт...</p>
-                    </div>
-                </div>
-                
-                <div class="book-controls">
-                    <button id="prevPage">◀ Назад</button>
-                    <span id="pageIndicator">1 / 3</span>
-                    <button id="nextPage">Вперёд ▶</button>
+        <div class="book-caption" id="bookCaption">Книга предметов</div>
+        <div class="book-stage" id="bookStage">
+            <div class="book-wrap" id="bookWrap">
+                <div class="book" id="book" data-mode="spread">
+                    <div class="book-shadow"></div>
+                    <div class="board left"></div>
+                    <div class="board right"></div>
+                    <div class="stack left"></div>
+                    <div class="stack right"></div>
                 </div>
             </div>
         </div>
-        <button class="back-btn" id="closeBook">✖ Закрыть книгу</button>
+        <div class="book-bar">
+            <button class="book-nav" id="bookPrev" aria-label="Назад">◀</button>
+            <div class="book-dots" id="bookDots"></div>
+            <button class="book-nav" id="bookNext" aria-label="Вперёд">▶</button>
+        </div>
+        <button class="back-btn" id="closeBook">← Закрыть книгу</button>
     </div>
 
     <canvas id="gameCanvas" width="400" height="400"></canvas>
@@ -204,9 +202,10 @@
 
     <script src="config.js"></script>
     <script src="game.js"></script>
+    <script src="ui.js"></script>
+    <script src="player.js"></script>
+    <script src="book.js"></script>
     <script src="input.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
-    </script>
+    <script src="pwa.js"></script>
 </body>
 </html>

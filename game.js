@@ -44,11 +44,6 @@ const resetProgressBtn = document.getElementById('resetProgressBtn');
 const resetMusicWarnBtn = document.getElementById('resetMusicWarnBtn');
 const toastContainer = document.getElementById('toastContainer');
 
-const book3D = document.getElementById('book3D');
-const closeBook = document.getElementById('closeBook');
-const prevPage = document.getElementById('prevPage');
-const nextPage = document.getElementById('nextPage');
-const pageIndicator = document.getElementById('pageIndicator');
 
 const LOGICAL = 400;
 const dpr = Math.min(window.devicePixelRatio || 1, 3);
@@ -184,16 +179,6 @@ function beep(freq, dur, type = 'square', vol = 1) {
     o.stop(t0 + dur + 0.02);
 }
 
-const pausePlayerEl = document.getElementById('playerToggle');
-const playerPrev = document.getElementById('playerPrev');
-const playerNext = document.getElementById('playerNext');
-const playerTitle = document.getElementById('playerTitle');
-const playerFill = document.getElementById('playerFill');
-const playerProgress = document.getElementById('playerProgress');
-const playerVol = document.getElementById('playerVol');
-const playerFile = document.getElementById('playerFile');
-const playerListEl = document.getElementById('playerList');
-const playerShuffle = document.getElementById('playerShuffle');
 
 const AUDIO_EXT = /\.(mp3|wav|ogg|m4a|mp4|flac|opus|aac)$/i;
 
@@ -202,6 +187,7 @@ let currentTrackIndex = 0;
 
 const bgm = new Audio();
 bgm.loop = false;
+bgm.preload = 'metadata';
 bgm.volume = CONFIG.musicVolume;
 
 function prettyTitle(filename) {
@@ -250,108 +236,9 @@ async function loadTracks() {
         list = MUSIC_TRACKS_FALLBACK.slice();
     }
 
-    const savedOrder = store.get('trackOrder', null);
-    if (savedOrder && Array.isArray(savedOrder)) {
-        list.sort((a, b) => {
-            const idxA = savedOrder.indexOf(a.file);
-            const idxB = savedOrder.indexOf(b.file);
-            if (idxA === -1) return 1;
-            if (idxB === -1) return -1;
-            return idxA - idxB;
-        });
-    }
-
+    list.forEach(t => { t.key = t.file; });
     tracks = list;
-    renderTrackList();
     return tracks;
-}
-
-let draggedItem = null;
-
-function renderTrackList() {
-    if (!playerListEl) return;
-    playerListEl.innerHTML = '';
-    if (!tracks.length) {
-        playerListEl.innerHTML = '<li class="player-item empty">Треков не найдено</li>';
-        return;
-    }
-    
-    tracks.forEach((t, i) => {
-        const li = document.createElement('li');
-        li.className = 'player-item' + (i === currentTrackIndex ? ' active' : '');
-        li.textContent = t.title;
-        li.dataset.index = i;
-        li.draggable = true; 
-        
-        li.addEventListener('click', () => setTrack(i, true));
-
-        li.addEventListener('dragstart', (e) => {
-            draggedItem = li;
-            li.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
-        });
-
-        li.addEventListener('dragend', () => {
-            li.classList.remove('dragging');
-            draggedItem = null;
-        });
-
-        li.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            const rect = li.getBoundingClientRect();
-            const midY = rect.top + rect.height / 2;
-            if (e.clientY < midY) {
-                li.classList.add('drag-over-top');
-                li.classList.remove('drag-over-bottom');
-            } else {
-                li.classList.add('drag-over-bottom');
-                li.classList.remove('drag-over-top');
-            }
-        });
-
-        li.addEventListener('dragleave', () => {
-            li.classList.remove('drag-over-top', 'drag-over-bottom');
-        });
-
-        li.addEventListener('drop', (e) => {
-            e.preventDefault();
-            li.classList.remove('drag-over-top', 'drag-over-bottom');
-            
-            if (draggedItem && draggedItem !== li) {
-                const fromIndex = parseInt(draggedItem.dataset.index, 10);
-                let toIndex = parseInt(li.dataset.index, 10);
-                
-                const rect = li.getBoundingClientRect();
-                const midY = rect.top + rect.height / 2;
-                if (e.clientY > midY) {
-                    toIndex++; 
-                }
-
-                const [moved] = tracks.splice(fromIndex, 1);
-                tracks.splice(toIndex, 0, moved);
-                
-                if (currentTrackIndex === fromIndex) currentTrackIndex = toIndex > fromIndex ? toIndex - 1 : toIndex;
-                
-                saveTrackOrder();
-                renderTrackList();
-            }
-        });
-
-        playerListEl.appendChild(li);
-    });
-}
-
-function saveTrackOrder() {
-    const order = tracks.map(t => t.file);
-    store.set('trackOrder', order);
-}
-
-function highlightActive() {
-    if (!playerListEl) return;
-    playerListEl.querySelectorAll('.player-item').forEach(li => {
-        li.classList.toggle('active', parseInt(li.dataset.index, 10) === currentTrackIndex);
-    });
 }
 
 function setTrack(i, autoplay) {
@@ -359,9 +246,8 @@ function setTrack(i, autoplay) {
     currentTrackIndex = ((i % tracks.length) + tracks.length) % tracks.length;
     const track = tracks[currentTrackIndex];
     bgm.src = track.file;
-    if (playerTitle) playerTitle.textContent = track.title;
-    store.set('trackIndex', currentTrackIndex);
-    highlightActive();
+    store.set('trackKey', track.key);
+    window.dispatchEvent(new Event('trackchange'));
     if (autoplay && musicEnabled) bgm.play().catch(() => {});
 }
 
@@ -397,86 +283,6 @@ function tryPlayMusic() {
 }
 
 function pauseMusic() { bgm.pause(); }
-
-function updatePlayerButton() {
-    if (!pausePlayerEl) return;
-    pausePlayerEl.textContent = bgm.paused ? '▶' : '⏸';
-}
-
-bgm.addEventListener('ended', () => {
-    if (tracks.length > 1) setTrack(currentTrackIndex + 1, true);
-    else if (musicEnabled) { bgm.currentTime = 0; bgm.play().catch(() => {}); }
-});
-
-bgm.addEventListener('timeupdate', () => {
-    if (playerFill && bgm.duration) {
-        playerFill.style.width = (bgm.currentTime / bgm.duration * 100) + '%';
-    }
-});
-
-bgm.addEventListener('play', updatePlayerButton);
-bgm.addEventListener('pause', updatePlayerButton);
-bgm.addEventListener('error', () => {
-    console.warn('Не удалось воспроизвести трек:', bgm.src);
-});
-
-if (playerPrev) playerPrev.addEventListener('click', () => setTrack(currentTrackIndex - 1, true));
-if (playerNext) playerNext.addEventListener('click', () => setTrack(currentTrackIndex + 1, true));
-
-if (pausePlayerEl) pausePlayerEl.addEventListener('click', () => {
-    if (bgm.paused) {
-        if (!musicEnabled) {
-            musicEnabled = true;
-            if (musicBtn) musicBtn.textContent = '🎵';
-            saveSettings();
-        }
-        tryPlayMusic();
-    } else {
-        pauseMusic();
-    }
-});
-
-if (playerShuffle) {
-    playerShuffle.addEventListener('click', () => {
-        for (let i = tracks.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [tracks[i], tracks[j]] = [tracks[j], tracks[i]];
-        }
-        const currentFile = bgm.src;
-        const newIndex = tracks.findIndex(t => t.file === currentFile || currentFile.endsWith(t.file));
-        if (newIndex !== -1) currentTrackIndex = newIndex;
-        
-        saveTrackOrder();
-        renderTrackList();
-        showToast('🔀 Треки перемешаны');
-    });
-}
-
-if (playerProgress) playerProgress.addEventListener('click', (e) => {
-    const rect = playerProgress.getBoundingClientRect();
-    const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-    if (bgm.duration) bgm.currentTime = ratio * bgm.duration;
-});
-
-if (playerVol) {
-    playerVol.addEventListener('input', () => {
-        const v = playerVol.value / 100;
-        bgm.volume = v;
-        CONFIG.musicVolume = v;
-        saveSettings();
-    });
-}
-
-if (playerFile) playerFile.addEventListener('change', () => {
-    const f = playerFile.files[0];
-    if (!f) return;
-    const url = URL.createObjectURL(f);
-    const track = { title: f.name, file: url };
-    const idx = tracks.findIndex(t => t.file === url);
-    if (idx === -1) tracks.push(track);
-    renderTrackList();
-    setTrack(tracks.length - 1, true);
-});
 
 function setDirection(x, y) {
     if (gameState === 'ready') {
@@ -838,7 +644,7 @@ function finishGame(title) {
     pauseBtn.classList.add('hidden');
     clearTimeout(endTimer);
     endTimer = setTimeout(() => {
-        if (gameState === 'gameover' || gameState === 'win') gameOverMenu.classList.remove('hidden');
+        if (gameState === 'gameover' || gameState === 'win') UI.pop(gameOverMenu);
     }, 450);
 }
 
@@ -1102,124 +908,8 @@ if (soundBtn) {
 }
 
 if (musicBtn) {
-    musicBtn.addEventListener('click', () => {
-        musicEnabled = !musicEnabled;
-        musicBtn.textContent = musicEnabled ? '🎵' : '🔕';
-        
-        if (musicEnabled) {
-            tryPlayMusic(); 
-            if (!store.get('musicWarned', false)) {
-                setTimeout(() => {
-                    alert('🎧 Внимание!\n\nВ игре используется музыка из игр (Minecraft, Stray и др.).\nЕсли вы стримите или записываете видео — отключите музыку, чтобы не получить блокировку за авторские права!');
-                }, 150);
-                store.set('musicWarned', true);
-            }
-        } else {
-            pauseMusic();
-        }
-        saveSettings();
-    });
+    musicBtn.addEventListener('click', () => Music.setEnabled(!musicEnabled));
 }
-
-if (settingsBtn) settingsBtn.addEventListener('click', () => {
-    menu.classList.add('hidden');
-    settingsMenu.classList.remove('hidden');
-});
-if (statsBtn) statsBtn.addEventListener('click', () => {
-    renderStats();
-    menu.classList.add('hidden');
-    statsMenu.classList.remove('hidden');
-});
-if (achBtn) achBtn.addEventListener('click', () => {
-    renderAch();
-    menu.classList.add('hidden');
-    achMenu.classList.remove('hidden');
-});
-if (recordsBtn) recordsBtn.addEventListener('click', () => {
-    renderRecords();
-    menu.classList.add('hidden');
-    recordsMenu.classList.remove('hidden');
-});
-
-if (musicMenuBtn) musicMenuBtn.addEventListener('click', () => {
-    menu.classList.add('hidden');
-    musicMenu.classList.remove('hidden');
-    renderTrackList(); 
-});
-
-let currentPage = 0;
-const pages = document.querySelectorAll('.page');
-const totalPages = pages.length;
-
-function updateBook() {
-    pages.forEach((p, i) => {
-        p.classList.toggle('active', i === currentPage);
-    });
-    if (pageIndicator) pageIndicator.textContent = (currentPage + 1) + ' / ' + totalPages;
-}
-
-if (aboutBtn) {
-    aboutBtn.addEventListener('click', () => {
-        menu.classList.add('hidden'); 
-        aboutMenu.classList.remove('hidden');
-        
-        aboutMenu.classList.remove('zoomed-in');
-        aboutMenu.classList.add('zoomed-out');
-        book3D.classList.remove('open');
-        
-        currentPage = 0;
-        updateBook();
-
-        setTimeout(() => {
-            book3D.classList.add('open');
-            setTimeout(() => {
-                aboutMenu.classList.remove('zoomed-out');
-                aboutMenu.classList.add('zoomed-in');
-            }, 800);
-        }, 100);
-    });
-}
-
-if (prevPage) {
-    prevPage.addEventListener('click', () => {
-        if (currentPage > 0) {
-            currentPage--;
-            updateBook();
-        }
-    });
-}
-
-if (nextPage) {
-    nextPage.addEventListener('click', () => {
-        if (currentPage < totalPages - 1) {
-            currentPage++;
-            updateBook();
-        }
-    });
-}
-
-if (closeBook) {
-    closeBook.addEventListener('click', () => {
-        aboutMenu.classList.remove('zoomed-in');
-        aboutMenu.classList.add('zoomed-out');
-        book3D.classList.remove('open');
-        
-        setTimeout(() => {
-            aboutMenu.classList.add('hidden');
-            aboutMenu.classList.remove('zoomed-out');
-            menu.classList.remove('hidden');
-        }, 800);
-    });
-}
-
-if (backFromMusic) backFromMusic.addEventListener('click', () => {
-    musicMenu.classList.add('hidden');
-    menu.classList.remove('hidden');
-});
-backFromSettings?.addEventListener('click', () => { settingsMenu.classList.add('hidden'); menu.classList.remove('hidden'); });
-backFromStats?.addEventListener('click', () => { statsMenu.classList.add('hidden'); menu.classList.remove('hidden'); });
-backFromAch?.addEventListener('click', () => { achMenu.classList.add('hidden'); menu.classList.remove('hidden'); });
-backFromRecords?.addEventListener('click', () => { recordsMenu.classList.add('hidden'); menu.classList.remove('hidden'); });
 
 skinButtons.forEach(btn => btn.addEventListener('click', () => {
     skin = btn.dataset.skin;
@@ -1231,7 +921,6 @@ skinButtons.forEach(btn => btn.addEventListener('click', () => {
 musicVolInput?.addEventListener('input', () => {
     CONFIG.musicVolume = musicVolInput.value / 100;
     bgm.volume = CONFIG.musicVolume;
-    if (playerVol) playerVol.value = Math.round(CONFIG.musicVolume * 100);
     saveSettings();
 });
 sfxVolInput?.addEventListener('input', () => {
@@ -1249,8 +938,8 @@ reducedMotionToggle?.addEventListener('change', () => {
     else store.del('reducedMotion');
 });
 
-resetProgressBtn?.addEventListener('click', () => {
-    if (!confirm('Сбросить рекорды, статистику и достижения?')) return;
+resetProgressBtn?.addEventListener('click', async () => {
+    if (!(await UI.confirmReset())) return;
     const keys = ['best_easy', 'best_medium', 'best_hard', 'best_insane', 'stats', 'ach', 'trackIndex', 'trackOrder'];
     Object.values(CONFIG.speeds).forEach(v => keys.push('best_' + v, 'best_' + v + '_wrap'));
     keys.forEach(k => store.del(k));
@@ -1294,9 +983,4 @@ document.addEventListener('touchstart', unlockAudio);
 loadSettings();
 showMenu(false);
 
-loadTracks().then(() => {
-    const savedIdx = store.get('trackIndex', 0);
-    currentTrackIndex = (savedIdx >= 0 && savedIdx < tracks.length) ? savedIdx : 0;
-    if (tracks.length) setTrack(currentTrackIndex, false);
-    if (playerVol) playerVol.value = Math.round(CONFIG.musicVolume * 100);
-});
+window.tracksReady = loadTracks();
